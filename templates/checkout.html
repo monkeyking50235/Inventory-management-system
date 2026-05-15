@@ -1,0 +1,79 @@
+{% extends "layout.html" %}
+{% block body %}
+
+  <!-- If there's an error, displays it while putting space below it -->
+{% if error %}
+    <div class="errordown" style="margin-bottom: 20px;">{{ error }}</div>
+{% endif %}
+
+  <!-- Code from w3schools -->
+<form action="{{ url_for('checkout_success') }}" method="post">
+    <div class="checkout-flex-row">
+        <div class="checkout-details-columns">
+            <div class="col-50">
+                <h3>Personal details</h3>
+                {% for item in details %}
+                    <label for="fname"><i class="fa fa-user"></i> Full Name</label>
+                    <input type="text" id="fname" name="firstname" placeholder="John M. Doe" value="{{ item[1] }}" required>
+                    <label for="email"><i class="fa fa-envelope"></i> Email</label>
+                    <input type="text" id="email" name="email" placeholder="john@example.com" value="{{ item[2] }}" required>
+                    <label for="adr"><i class="fa fa-address-card-o"></i> Address</label>
+                    <input type="text" id="adr" name="address" placeholder="105 Windsor Road, Bellevue" required>
+                {% endfor %}
+            </div>
+            <div class="col-50">
+                <h3>Credit card details</h3>
+                {% for item in details %}
+                    <label for="ccnum">Credit card number</label>
+                    <input class="int" type="number" id="ccnum" name="cardnumber" placeholder="1111222233334444" value="{{ item[5] }}" required>
+                    <label for="expdate" style="margin-top: 50px;">Exp Date</label>
+                    <input type="month" id="expdate" name="expdate" required>
+                {% endfor %}
+                <label for="cvv" style="margin-top: 40px;">CVV</label>
+                <input class="int" type="number" id="cvv" name="cvv" placeholder="352" required>
+            </div>
+        </div>
+        <div class="checkout-cart-col">
+            <div class="container3">
+                <h4>Cart</h4>
+                {% for item in cart_items %}
+                    <p>
+                        <img src="{{ item['image_url'] }}" alt="{{ item['item_name'] }}" width="40" style="vertical-align:middle;">
+                        <a class="nolink" href="#">{{ item['item_name'] }}</a>
+                        (x{{ item['quantity'] }}) 
+                        <span class="price">${{ "%.2f"|format(item['item_cost'] * item['quantity']) }}</span>
+                    </p>
+                {% endfor %}
+                <hr>
+                <p>Total <span class="price" style="color:black"><b>${{ "%.2f"|format(cart_total) }}</b></span></p>
+            </div>
+        </div>
+    </div>
+    <div class="confirm-row">
+        <button type="submit" class="btn">Confirm Purchase</button>
+    </div>
+</form>
+  <!-- Adds an element at the bottom so that the margin can be changed -->
+<div id="bottom"></div>
+
+<div id="confirm_fullover" class="{% if order_placed %}show{% endif %}">
+  <div>
+    <p>Your order has been placed.</p>
+    <button onclick="toggleConfirmation()" class="btn" style="background:#000000;">Ok</button>
+  </div>
+</div>
+  <!-- Ensures the card expiry date can't be earlier than this month -->
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    const expInput = document.getElementById("expdate");
+    if (expInput) {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        expInput.min = `${year}-${month}`;
+    }
+});
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,110 @@
+{% extends "layout.html" %}
+{% block body %}
+<link rel="stylesheet" href="https://code.jquery.com/ui/1.14.1/themes/base/jquery-ui.css">
+<link rel="stylesheet" href="/resources/demos/style.css">
+  <!-- Adds a top margin to specificly this page -->
+<style>
+  body {
+    margin-top: 100px;
+  }
+</style>
+<script src="https://code.jquery.com/jquery-3.7.1.js"></script>
+<script src="https://code.jquery.com/ui/1.14.1/jquery-ui.js"></script>
+
+</head>
+
+{% if menu_error %}
+<div class="menu_message">
+     {{ menu_error }}
+ </div>
+{% endif %}
+  <!-- Creates three seperate tabs for drinks, pizzas, and sides -->
+<div id="tabs">
+<ul>
+  <li><a href="#tabs-1">Pizzas</a></li>
+  <li><a href="#tabs-2">Drinks</a></li>
+  <li><a href="#tabs-3">Sides</a></li>
+</ul>
+<div id="tabs-1">
+  <!-- Gets the menu from the database and displays it on the right tab -->
+  {% for item in pizzas %}
+  <div class="menu-item">
+    <img src="{{ item[6] }}" alt="{{ item[1] }}" class="menu-image">
+    <div class="menu-details">
+      <div class="menu-title">{{ item[1] }} ${{ item[2] }}
+        {% if item[4] == 1 %} <img src="{{ url_for('static', filename='images/meat.png') }}" alt="contains_meat" class="icon"> {% endif %}
+        {% if item[5] == 1 %} <img src="{{ url_for('static', filename='images/spice.png') }}" alt="contains_spice" class="icon"> {% endif %}
+      </div>
+  </div>
+    </div>
+      <div class="menu-description">{{ item[3] }}</div>
+    <form action="{{ url_for('add_product_to_cart') }}" method="post">
+      <input type="hidden" name="item_id" value="{{ item[0] }}">
+      <input type="number" name="quantity" value="1" min="1">
+      <button type="submit">Add to Cart</button>
+    </form>
+  {% endfor %}
+    <!-- If the item has meat or spice, displays the appropriate image -->
+  <img src="{{ url_for('static', filename='images/meat.png') }}" alt="contains_meat" class="icon"> <p>Contains meat</p>
+  <img src="{{ url_for('static', filename='images/spice.png') }}" alt="contains_spice" class="icon"> <p>Contains spice</p>
+</div>
+<div id="tabs-2">
+  {% for item in drinks %}
+  <div class="menu-item">
+    <img src="{{ item[6] }}" alt="{{ item[1] }}" id="drink-image">
+    <div class="menu-details">
+      <div class="menu-title">{{ item[1] }} ${{ item[2] }}</div>
+      <div class="menu-description">{{ item[3] }}</div>
+    <form action="{{ url_for('add_product_to_cart') }}" method="post">
+      <input type="hidden" name="item_id" value="{{ item[0] }}">
+      <input type="number" name="quantity" value="1" min="1">
+      <button type="submit">Add to Cart</button>
+    </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+<div id="tabs-3">
+  {% for item in sides %}
+  <div class="menu-item">
+    <img src="{{ item[6] }}" alt="{{ item[1] }}" class="menu-image">
+    <div class="menu-details">
+      <div class="menu-title">{{ item[1] }} ${{ item[2] }}</div>
+      <div class="menu-description">{{ item[3] }}</div>
+    <form action="{{ url_for('add_product_to_cart') }}" method="post">
+      <input type="hidden" name="item_id" value="{{ item[0] }}">
+      <input type="number" name="quantity" value="1" min="1">
+      <button type="submit">Add to Cart</button>
+    </form>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+</div>
+
+  <!-- When an item is added to cart, displays this fullover -->
+<div id="confirm_fullover">
+  <div>
+      <p>Item added to cart.</p>
+      <button onclick="document.getElementById('confirm_fullover').classList.remove('show')">Ok</button>
+  </div>
+</div>
+
+  <!-- When the page is loaded, if added = 1 then the fullover is shown -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const overlay = document.getElementById('confirm_fullover');
+  if (urlParams.get('added') === '1') {
+    overlay.classList.add('show');
+  }
+});
+
+$( function() {
+  $( "#tabs" ).tabs();
+} );
+
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css">
+    <link rel='stylesheet' href='https://cdnjs.cloudflare.com/ajax/libs/twitter-bootstrap/4.5.0/css/bootstrap.min.css'>
+    <link rel='stylesheet' href='https://unicons.iconscout.com/release/v2.1.9/css/unicons.css'>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>Porky's Pizza</title>
+</head>
+
+<body>
+
+
+    <div class="flex-wrapper">
+        <div class="header"><header>
+            <!--Makes the nav bar at the top of the website-->
+            <nav>
+                <div class="nav-left">
+                    <a href="{{ url_for('home') }}">
+                        <img id="nav-image" 
+                        src="{{ url_for('static', filename='images/logo.png') }}"
+                        alt="Porky's Pizza logo" width="100px">
+                    </a>
+                    <ul>
+                        <li id="first_item"><a href="{{ url_for('home') }}">Home</a></li>
+                        <li><a href="{{ url_for('menu') }}">Menu</a></li>
+                        {% if session.get("name") %}
+                            <li><a href="{{ url_for('logout') }}" onclick="localStorage.setItem('darkMode','false')">Logout</a></li>
+                        {% endif %}
+                    </ul>
+                </div>
+                <div id="right">
+                        <button>
+                            <img src="{{ url_for('static', 
+                            filename='images/cart.png') }}" 
+                            alt="Cart">
+                        </button>
+                    <a href="{{ url_for('profile') }}">
+                        <img id="profile-image" 
+                        src="{{ url_for('static', filename='images/profile.png') }}"
+                        alt="Profile">
+                    </a>
+                </div>
+            </nav>
+        </header></div>
+        <div class="content">    
+            <main>
+                {% block body %}
+                {% endblock %}
+            </main>
+        </div>
+        </div>
+        <div class="footer">
+            <footer>
+                <h3>
+                    <strong>
+                        Order now!
+                    </strong>
+                </h3>
+                <p>
+                    <small>&copy; 2024 Porky's Pizza Postage| Nowhere Rd, Towny, 
+                    Citynearyou 0000, 
+                    Bay of Bays, Most Countries<br>
+                    </small>
+                </p>
+            </footer>
+        </div>
+    </div>
+    <script>
+        // The code for the dark mode
+        let darkMode = false;
+        
+        function applyDarkMode(isDark) {
+    document.body.style.backgroundColor = isDark ? "black" : "rgb(165, 196, 212)";
+    document.body.style.color = isDark ? "rgb(165, 196, 212)" : "black";
+
+    // Selects all pages
+    document.querySelectorAll('.text').forEach(el => {
+        el.style.backgroundColor = isDark ? "black" : "";
+        el.style.color = isDark ? "rgb(165, 196, 212)" : "";
+    });
+
+    // Selects menu page tabs
+    const tabs = document.getElementById("tabs");
+    if (tabs) {
+        tabs.style.backgroundColor = isDark ? "black" : "rgb(165, 196, 212)";
+        tabs.style.color = isDark ? "rgb(165, 196, 212)" : "black";
+        tabs.querySelectorAll('div, ul, li').forEach(el => {
+            el.style.backgroundColor = isDark ? "black" : "rgb(165, 196, 212)";
+            el.style.color = isDark ? "rgb(165, 196, 212)" : "black";
+        
+        });
+    }
+
+    document.querySelectorAll('#tabs ul li a').forEach(link => {
+    link.style.color = isDark ? "rgb(165, 196, 212)" : "black";
+    })
+    // Selects checkout page elements
+    document.querySelectorAll('.row, .container, .col-25, .col-50, .col-75').forEach(el => {
+        el.style.backgroundColor = isDark ? "#222" : "";
+        el.style.color = isDark ? "rgb(165, 196, 212)" : "";
+    });
+
+    localStorage.setItem("darkMode", isDark ? "true" : "false");
+    darkMode = isDark;
+}
+        
+function dark() {
+    const darkModeCheckbox = document.getElementById("dark");
+    applyDarkMode(darkModeCheckbox && darkModeCheckbox.checked);
+}
+document.addEventListener('DOMContentLoaded', function() {
+    const savedDarkMode = localStorage.getItem("darkMode") === "true";
+    applyDarkMode(savedDarkMode);
+    const darkModeCheckbox = document.getElementById("dark");
+    if (darkModeCheckbox) darkModeCheckbox.checked = savedDarkMode;
+});
+
+//The codes for the overlays
+
+        function toggleOverlay() {
+            const overlay = document.getElementById("fullover");
+            overlay.classList.toggle("show");
+        }
+
+        function toggleOverlaydetails() {
+            const overlay = document.getElementById("edit");
+            overlay.classList.toggle("show");
+        }
+
+        function toggleConfirmation() {
+            const overlay = document.getElementById("confirm_fullover");
+            overlay.classList.toggle("show");
+        }
+        const cartIcon = document.querySelector('#right img[alt="Cart"]');
+        const miniCart = document.getElementById('mini-cart');
+
+        cartIcon.addEventListener('click', () => {
+            miniCart.classList.toggle('show');
+        });
+
+        window.addEventListener('click', (event) => {
+            if (!miniCart.contains(event.target) && event.target !== cartIcon) {
+                miniCart.classList.remove('show');
+            }
+        });
+
+
+    </script>
+  <!-- Creates the mini cart -->
+
+<div id="mini-cart" class="mini-cart">
+    <div class="mini-cart-content">
+        <h3>Your Cart</h3>
+        {% if db_cart_items and db_cart_items|length > 0 %}
+            <ul>
+                {% for item in db_cart_items %}
+                    <li>
+                        <img src="{{ item['image_url'] }}" alt="{{ item['item_name'] }}" width="50">
+                        <span>{{ item['item_name'] }}</span>
+                        <span>Qty: {{ item['quantity'] }}</span>
+                        <span>Total: ${{ item['total_price'] }}</span>
+                        <a href="{{ url_for('delete_cart_item', menu_id=item['menu_id']) }}">Remove</a>
+                    </li>
+                {% endfor %}
+            </ul>
+            <p>Total Items: {{ db_cart_total_quantity }}</p>
+            <p>Total Price: ${{ db_cart_total_price }}</p>
+            <a id="left" href="{{ url_for('empty_cart') }}">Empty Cart</a>
+        {% else %}
+            <p>Your cart is empty.</p>
+        {% endif %}
+        <a id="right" href="{{ url_for('checkout') }}">Continue to Checkout</a>
+    </div>
+</div>
+<script>
+window.onload = function() {
+    const cartIcon = document.querySelector('#right img[alt="Cart"]');
+    const miniCart = document.getElementById('mini-cart');
+    if (cartIcon && miniCart) {
+        cartIcon.addEventListener('click', (event) => {
+            event.stopPropagation();
+            miniCart.classList.toggle('show');
+        });
+        window.addEventListener('click', (event) => {
+            if (!miniCart.contains(event.target) && event.target !== cartIcon) {
+                miniCart.classList.remove('show');
+            }
+        });
+    }
+};
+</script>
+</body>
+
+</html>
+

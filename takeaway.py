@@ -1,0 +1,341 @@
+import sqlite3
+from flask import Flask, g, render_template, request, redirect, url_for, session
+from flask_session import Session
+import os
+from flask_sqlalchemy import SQLAlchemy
+
+app = Flask(__name__)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///takeaway_ordering.db'
+app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+db = SQLAlchemy(app)
+# Configuration 
+app.config["SESSION_PERMANENT"] = False
+app.config["SESSION_TYPE"] = "filesystem" 
+# Initialize Flask-Session
+Session(app)
+
+# Adds the cart items and other data to all templates
+@app.context_processor
+def inject_cart_data():
+    user_id = get_user_id()
+    cart_items = []
+    total_quantity = 0
+    total_price = 0
+    if user_id:
+        order_id = get_or_create_cart_order(user_id)
+        cart_items = query_db("""
+            SELECT item.item_id, item.menu_id, menu.item_name, menu.item_cost, menu.image_url,
+                   COUNT(item.item_id) as quantity,
+                   SUM(menu.item_cost) as total_price
+            FROM item
+            JOIN menu ON item.menu_id = menu.menu_id
+            WHERE item.order_id = ?
+            GROUP BY item.menu_id
+        """, [order_id])
+        total_quantity = sum(item["quantity"] for item in cart_items)
+        total_price = round(sum(item["total_price"] for item in cart_items), 2)
+    return dict(
+        db_cart_items=cart_items,
+        db_cart_total_quantity=total_quantity,
+        db_cart_total_price=total_price
+    )
+
+#Gets info from the database and prints it nicely
+
+def get_db():
+    db = getattr(g, '_database', None)
+    if db is None:
+        db = g._database = sqlite3.connect("takeaway_ordering.db")
+        db.row_factory = sqlite3.Row
+    return db
+
+def query_db(query, args=(), one=False, commit=False):
+    db = get_db()
+    cur = db.execute(query, args)
+    rv = cur.fetchall()
+    cur.close()
+    if commit:
+        db.commit()
+    return (rv[0] if rv else None) if one else rv
+
+@app.teardown_appcontext
+def close_connection(exception):
+    db = getattr(g, '_database', None)
+    if db is not None:
+        db.close()
+
+# Gets the users id from the database
+def get_user_id():
+    if "name" not in session:
+        return None
+    row = query_db("SELECT user_id FROM user WHERE email = ?", [session["name"]], one=True)
+    return row["user_id"] if row else None
+
+""" Selects the info from the order table for the current user, ensuring its 
+a current order. If no order exists then it makes one"""
+def get_or_create_cart_order(user_id):
+    order = query_db("SELECT * FROM orders WHERE user_id = ? AND status = 'cart'", [user_id], one=True)
+    if order:
+        return order["order_id"]
+    db = get_db()
+    cur = db.execute("INSERT INTO orders (user_id, status) VALUES (?, ?)", (user_id, "cart"))
+    db.commit()
+    return cur.lastrowid
+
+# Calculates the total cost of the items in the cart
+def total():
+    user_id = get_user_id()
+    if not user_id:
+        return 0
+    order_id = get_or_create_cart_order(user_id)
+    cart_items = query_db("""
+        SELECT item.item_id, item.menu_id, menu.item_name, menu.item_cost, menu.image_url,
+               COUNT(item.item_id) as quantity,
+               SUM(Menu.item_cost) as total_price
+        FROM item
+        JOIN menu ON item.menu_id = menu.menu_id
+        WHERE item.order_id = ?
+        GROUP BY item.menu_id
+    """, [order_id])
+    total = sum(item["item_cost"] * item["quantity"] for item in cart_items)
+    total = round(total, 2)
+    return total if total else 0
+# Creates the mini cart in the top right
+@app.route("/cart")
+def cart():
+    cart_total = total()
+    return redirect(request.referrer, cart_total=cart_total)
+# When the add to cart button is pressed, adds item to cart
+@app.route('/add', methods=['POST'])
+def add_product_to_cart():
+    user_id = get_user_id()
+    if not user_id:
+        return redirect(url_for("profile"))
+    menu_id = int(request.form.get('item_id'))
+    try:
+        quantity = int(request.form.get('quantity', 1))
+    except:
+        menu_error = "You must have a number."
+        sql_pizza = "SELECT * FROM menu WHERE category = 'Pizza';"
+        sql_drink = "SELECT * FROM menu WHERE category = 'Drink';"
+        sql_side = "SELECT * FROM menu WHERE category = 'Side';"
+        pizzas = query_db(sql_pizza)
+        drinks = query_db(sql_drink)
+        sides = query_db(sql_side)
+        added = request.args.get('added')
+        return render_template("menu.html", menu_error=menu_error, pizzas=pizzas, drinks=drinks, sides=sides, added=added)
+    order_id = get_or_create_cart_order(user_id)
+    db = get_db()
+    for _ in range(quantity):
+        db.execute("INSERT INTO item (order_id, menu_id) VALUES (?, ?)", (order_id, menu_id))
+    db.commit()
+    return redirect(url_for("menu", added=1))
+# Removes all items from the cart
+@app.route("/empty_cart")
+def empty_cart():
+    user_id = get_user_id()
+    if not user_id:
+        return redirect(url_for("profile"))
+    order_id = get_or_create_cart_order(user_id)
+    db = get_db()
+    db.execute("DELETE FROM item WHERE order_id = ?", (order_id,))
+    db.commit()
+    return redirect(request.referrer)
+# Removes all of one item from the cart
+@app.route("/delete_cart_item/<int:menu_id>")
+def delete_cart_item(menu_id):
+    user_id = get_user_id()
+    if not user_id:
+        return redirect(url_for("profile"))
+    order_id = get_or_create_cart_order(user_id)
+    db = get_db()
+    db.execute("DELETE FROM item WHERE order_id = ? AND menu_id = ?", (order_id, menu_id))
+    db.commit()
+    return redirect(request.referrer )
+# Sends a pop up to confirm the order has been placed, and sets the order status to placed
+@app.route("/checkout_success", methods=["POST", "GET"])
+def checkout_success():
+    user_id = get_user_id()
+    if not user_id:
+        return redirect(url_for("profile"))
+    order_id = get_or_create_cart_order(user_id)
+    cart_items = query_db("""
+    SELECT menu.menu_id, menu.item_name, menu.item_cost, menu.image_url, COUNT(item.item_id) as quantity
+    FROM item
+    JOIN menu ON item.menu_id = menu.menu_id
+    WHERE item.order_id = ?
+    GROUP BY menu.menu_id
+    """, [order_id])
+    if not cart_items:
+        return redirect(url_for("checkout", error="Your cart is empty. Please add items before purchasing."))
+    cart_total = total()
+    db = get_db()
+    db.execute("UPDATE orders SET status = 'Placed', store_id = 1, item_id = ?, cost = ? WHERE order_id = ?", (order_id, cart_total, order_id,))
+    db.commit()
+    #This print would be replaced with a way to send this order to the store making it.
+    for item in cart_items:
+        print(f"Order {order_id} placed with total cost: {cart_total}, contains items: {item['item_name']} (Quantity: {item['quantity']})")
+    return redirect(url_for("checkout", order_placed=1))
+
+@app.route("/")
+def home():
+    return render_template("index.html")
+
+@app.route("/profile")
+def profile():
+    if "name" in session:
+        return redirect(url_for("details"))
+    return render_template("profile.html")
+""" Ensures all inputs for the profile are valid, and then lets the user through
+ and creates an account if needed"""
+@app.route("/validate_profile", methods=["POST"])
+def validate_profile():
+
+    action = request.form.get("action")
+    logemail = request.form.get("logemail")
+    logpass = request.form.get("logpass")
+    sql_users = "SELECT * FROM user;"
+    users = query_db(sql_users)
+    user_emails = [user[2] for user in users]
+    user_passwords = {user[2]: user[3] for user in users}
+
+    if action == "signup":
+        logname = request.form.get("logname")
+        if not logname or not logemail or not logpass:
+            signup_error = "All fields are required for Sign Up."
+            return render_template("profile.html", signup_error=signup_error, show_signup=True)
+        if logemail in user_emails:
+            signup_error = "This email is already in use."
+            return render_template("profile.html", signup_error=signup_error, show_signup=True)
+        elif logpass in user_passwords.values():
+            signup_error = "This password is already in use."
+            return render_template("profile.html", signup_error=signup_error, show_signup=True)
+        else:
+            db = get_db()
+            cursor = db.cursor()
+            cursor.execute(
+            """
+                INSERT INTO user (name, email, password)
+                VALUES (?, ?, ?)
+            """,
+            (logname, logemail, logpass)
+            )
+            db.commit()
+            session["name"] = logemail
+            return redirect(url_for("details"))
+    elif action == "login":
+        if logemail in user_emails and user_passwords.get(logemail) == logpass:
+            session["name"] = logemail
+            return redirect(url_for("details", logemail=logemail, logpass=logpass))
+        else:
+            login_error = "Invalid email or password."
+            return render_template("profile.html", login_error=login_error, show_signup=False)
+    else:
+        error = "Invalid action."
+        return render_template("profile.html", error=error)
+
+@app.route("/menu")
+def menu():
+    sql_pizza = "SELECT * FROM menu WHERE category = 'Pizza';"
+    sql_drink = "SELECT * FROM menu WHERE category = 'Drink';"
+    sql_side = "SELECT * FROM menu WHERE category = 'Side';"
+    pizzas = query_db(sql_pizza)
+    drinks = query_db(sql_drink)
+    sides = query_db(sql_side)
+    added = request.args.get('added')
+    return render_template("menu.html", pizzas=pizzas, drinks=drinks, sides=sides, added=added)
+
+@app.route("/about")
+def about():
+    return render_template("about.html")
+
+@app.route("/layout")
+def layout():
+    return render_template("layout.html", session=session)
+
+@app.route("/details")
+def details():
+    if "name" not in session:
+        return redirect(url_for("profile"))
+    logemail = session["name"] 
+    sql_user = "SELECT * FROM user;"
+    users = query_db(sql_user)
+    return render_template("details.html", logemail=logemail, users=users)
+#Cancel the current order and log out the user
+@app.route("/logout")
+def logout():
+    user_id = get_user_id()
+    order_id = get_or_create_cart_order(user_id)
+    db = get_db()
+    db.execute("UPDATE orders SET status = 'Cancelled' WHERE order_id = ?", (order_id,))
+    db.commit()
+    session.clear()
+    return redirect(url_for("home"))
+#delete the users account
+@app.route("/delete_account", methods=["POST"])
+def delete_account():
+    if "name" not in session:
+        return redirect(url_for("profile"))
+    logemail = session["name"]
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM user WHERE email = ?", (logemail,))
+    db.commit()
+    session.clear()
+    return redirect(url_for("home"))
+#Lets the user edit their details except email, ensuring the password is not already in use
+@app.route("/edit_details", methods=["POST"])
+def edit_details():
+    if "name" not in session:
+        return redirect(url_for("profile"))
+    logemail = request.form.get("email")
+    name = request.form.get("name")
+    password = request.form.get("password")
+    location = request.form.get("location")
+    phone_number = request.form.get("phone")
+    credit_card = request.form.get("credit_card")
+    sql_user = "SELECT * FROM user;"
+    users = query_db(sql_user)
+    sql_password = "SELECT password FROM user"
+    logpass = query_db(sql_password)
+    logpass_list = [row[0] for row in logpass]
+    if password in logpass_list:
+        show_overlay="true"
+        return render_template("details.html", users=users, logemail=logemail, 
+                               error="Password already in use.",
+                               show_overlay=show_overlay)
+    else:
+        db = get_db()
+        cursor = db.cursor()
+        cursor.execute("""
+        UPDATE user
+        SET name = ?, password = ?, location = ?, "phone number" = ?, "credit card number" = ?
+        WHERE email = ?
+        """, (name, password, location, phone_number, credit_card, logemail))
+        db.commit()
+        session["display_name"] = name
+        return redirect(url_for("details"))
+# Adds the checkout page with the cart items and cost
+@app.route("/checkout")
+def checkout():
+    if "name" not in session:
+        return redirect(url_for("profile"))
+    details = query_db("SELECT * FROM user WHERE email = ?", [session["name"]])
+    user_id = get_user_id()
+    order_id = get_or_create_cart_order(user_id)
+    cart_items = query_db("""
+        SELECT menu.menu_id, menu.item_name, menu.item_cost, menu.image_url, COUNT(item.item_id) as quantity
+        FROM item
+        JOIN menu ON item.menu_id = menu.menu_id
+        WHERE item.order_id = ?
+        GROUP BY menu.menu_id
+    """, [order_id])
+    cart_total = total()
+    order_placed = request.args.get("order_placed")
+    error = request.args.get("error")
+    return render_template("checkout.html", details=details, cart_items=cart_items, cart_total=cart_total, order_placed=order_placed, error=error)
+
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
