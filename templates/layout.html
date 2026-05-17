@@ -13,6 +13,30 @@
 
 <body>
 
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="flashed-messages">
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category}}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                let flashes=document.querySelectorAll('.flashed-messages .alert');
+                flashes.forEach(function(flash){
+                    flash.style.transition="opacity 0.7s";
+                    flash.style.opacity=0;
+                    setTimeout(() => flash.remove(), 700);
+                });
+            }, 3000);
+        });
+    </script>
 
     <div class="flex-wrapper">
         <div class="header"><header>

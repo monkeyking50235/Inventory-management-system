@@ -3,6 +3,7 @@ from flask import Flask, g, render_template, request, redirect, url_for, session
 from flask_session import Session
 import os
 from flask_sqlalchemy import SQLAlchemy
+from flask import flash, get_flashed_messages
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///takeaway_ordering.db'
@@ -122,14 +123,14 @@ def add_product_to_cart():
         pizzas = query_db(sql_pizza)
         drinks = query_db(sql_drink)
         sides = query_db(sql_side)
-        added = request.args.get('added')
-        return render_template("menu.html", menu_error=menu_error, pizzas=pizzas, drinks=drinks, sides=sides, added=added)
+        return render_template("menu.html", menu_error=menu_error, pizzas=pizzas, drinks=drinks, sides=sides)
     order_id = get_or_create_cart_order(user_id)
     db = get_db()
     for _ in range(quantity):
         db.execute("INSERT INTO item (order_id, menu_id) VALUES (?, ?)", (order_id, menu_id))
     db.commit()
-    return redirect(url_for("menu", added=1))
+    flash("Item added to cart.", "info")
+    return redirect(url_for("menu"))
 # Removes all items from the cart
 @app.route("/empty_cart")
 def empty_cart():
@@ -140,6 +141,7 @@ def empty_cart():
     db = get_db()
     db.execute("DELETE FROM item WHERE order_id = ?", (order_id,))
     db.commit()
+    flash("All items removed from cart.", "info")
     return redirect(request.referrer)
 # Removes all of one item from the cart
 @app.route("/delete_cart_item/<int:menu_id>")
@@ -151,6 +153,7 @@ def delete_cart_item(menu_id):
     db = get_db()
     db.execute("DELETE FROM item WHERE order_id = ? AND menu_id = ?", (order_id, menu_id))
     db.commit()
+    flash("Items removed from cart.", "info")
     return redirect(request.referrer )
 # Sends a pop up to confirm the order has been placed, and sets the order status to placed
 @app.route("/checkout_success", methods=["POST", "GET"])

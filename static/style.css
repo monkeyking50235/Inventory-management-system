@@ -947,6 +947,33 @@ body .section {
     min-width: 260px;
     max-width: 350px;
 }
+
+.flashed-messages {
+    position: fixed;
+    top: 80px;
+    width: 100%;
+    text-align: center;
+    z-index: 9999;
+}
+
+.alert {
+    display: inline-block;
+    padding: 12px 24px;
+    background: #222;
+    color: #fff;
+    border-radius: 4px;
+    margin: 8px auto;
+}
+
+.alert-info {
+    background: #3cb371;
+}
+
+.alert-danger {
+    background: #dc3545:
+}
+
+
 @media (max-width: 900px) {
     .checkout-flex-row, .checkout-details-columns {
         flex-direction: column;
