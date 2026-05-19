@@ -903,6 +903,7 @@ body .section {
 
 .icon{
     width: 40px;
+    transition: filter 0.3s ease;
 }
 
 .section .container2 {
@@ -1087,4 +1088,10 @@ body .section {
   .slider.round:before {
     border-radius: 50%;
   }
+}
+
+@media (prefers-color-scheme: dark) {
+    .icon{
+        filter: invert(1);
+    }
 }

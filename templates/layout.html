@@ -122,6 +122,11 @@
     document.querySelectorAll('#tabs ul li a').forEach(link => {
     link.style.color = isDark ? "rgb(165, 196, 212)" : "black";
     })
+
+    // Invert icon colours
+    document.querySelectorAll('img.icon').forEach(icon => {
+        icon.style.filter = isDark ? "invert(1)" : "";
+    });
     // Selects checkout page elements
     document.querySelectorAll('.row, .container, .col-25, .col-50, .col-75').forEach(el => {
         el.style.backgroundColor = isDark ? "#222" : "";
