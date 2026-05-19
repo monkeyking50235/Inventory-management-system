@@ -25,12 +25,12 @@
                 <h3>Credit card details</h3>
                 {% for item in details %}
                     <label for="ccnum">Credit card number</label>
-                    <input class="int" type="number" id="ccnum" name="cardnumber" placeholder="1111222233334444" value="{{ item[5] }}" required>
+                    <input class="int" type="number" id="ccnum" name="cardnumber" placeholder="1111222233334444" value="{{ item[5] }}" min="1000000000"  required>
                     <label for="expdate" style="margin-top: 50px;">Exp Date</label>
                     <input type="month" id="expdate" name="expdate" required>
                 {% endfor %}
                 <label for="cvv" style="margin-top: 40px;">CVV</label>
-                <input class="int" type="number" id="cvv" name="cvv" placeholder="352" required>
+                <input class="int" type="number" id="cvv" name="cvv" placeholder="352" min="100"  required>
             </div>
         </div>
         <div class="checkout-cart-col">
@@ -45,7 +45,7 @@
                     </p>
                 {% endfor %}
                 <hr>
-                <p>Total <span class="price" style="color:black"><b>${{ "%.2f"|format(cart_total) }}</b></span></p>
+                <p>Total <span class="price"><b>${{ "%.2f"|format(cart_total) }}</b></span></p>
             </div>
         </div>
     </div>

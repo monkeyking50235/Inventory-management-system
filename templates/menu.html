@@ -35,14 +35,14 @@
         {% if item[4] == 1 %} <img src="{{ url_for('static', filename='images/meat.png') }}" alt="contains_meat" class="icon"> {% endif %}
         {% if item[5] == 1 %} <img src="{{ url_for('static', filename='images/spice.png') }}" alt="contains_spice" class="icon"> {% endif %}
       </div>
-  </div>
-    </div>
       <div class="menu-description">{{ item[3] }}</div>
     <form action="{{ url_for('add_product_to_cart') }}" method="post">
       <input type="hidden" name="item_id" value="{{ item[0] }}">
       <input type="number" name="quantity" value="1" min="1">
       <button type="submit">Add to Cart</button>
     </form>
+    </div>
+  </div>
   {% endfor %}
     <!-- If the item has meat or spice, displays the appropriate image -->
   <img src="{{ url_for('static', filename='images/meat.png') }}" alt="contains_meat" class="icon"> <p>Contains meat</p>
@@ -81,6 +81,8 @@
   {% endfor %}
 </div>
 </div>
+
+<script>
 
 $( function() {
   $( "#tabs" ).tabs();

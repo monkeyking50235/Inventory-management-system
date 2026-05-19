@@ -102,6 +102,7 @@ def total():
     total = round(total, 2)
     return total if total else 0
 # Creates the mini cart in the top right
+
 @app.route("/cart")
 def cart():
     cart_total = total()
@@ -131,6 +132,7 @@ def add_product_to_cart():
     db.commit()
     flash("Item added to cart.", "info")
     return redirect(url_for("menu"))
+
 # Removes all items from the cart
 @app.route("/empty_cart")
 def empty_cart():
@@ -143,6 +145,7 @@ def empty_cart():
     db.commit()
     flash("All items removed from cart.", "info")
     return redirect(request.referrer)
+
 # Removes all of one item from the cart
 @app.route("/delete_cart_item/<int:menu_id>")
 def delete_cart_item(menu_id):
@@ -155,6 +158,7 @@ def delete_cart_item(menu_id):
     db.commit()
     flash("Items removed from cart.", "info")
     return redirect(request.referrer )
+
 # Sends a pop up to confirm the order has been placed, and sets the order status to placed
 @app.route("/checkout_success", methods=["POST", "GET"])
 def checkout_success():
@@ -191,6 +195,7 @@ def profile():
     return render_template("profile.html")
 """ Ensures all inputs for the profile are valid, and then lets the user through
  and creates an account if needed"""
+
 @app.route("/validate_profile", methods=["POST"])
 def validate_profile():
 
@@ -264,6 +269,7 @@ def details():
     sql_user = "SELECT * FROM user;"
     users = query_db(sql_user)
     return render_template("details.html", logemail=logemail, users=users)
+
 #Cancel the current order and log out the user
 @app.route("/logout")
 def logout():
@@ -274,6 +280,7 @@ def logout():
     db.commit()
     session.clear()
     return redirect(url_for("home"))
+
 #delete the users account
 @app.route("/delete_account", methods=["POST"])
 def delete_account():
@@ -286,6 +293,7 @@ def delete_account():
     db.commit()
     session.clear()
     return redirect(url_for("home"))
+
 #Lets the user edit their details except email, ensuring the password is not already in use
 @app.route("/edit_details", methods=["POST"])
 def edit_details():
@@ -318,6 +326,7 @@ def edit_details():
         db.commit()
         session["display_name"] = name
         return redirect(url_for("details"))
+    
 # Adds the checkout page with the cart items and cost
 @app.route("/checkout")
 def checkout():
