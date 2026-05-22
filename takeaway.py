@@ -234,6 +234,12 @@ def validate_profile():
     elif action == "login":
         if logemail in user_emails and user_passwords.get(logemail) == logpass:
             session["name"] = logemail
+            user_id = query_db("SELECT user_id FROM user WHERE email = ?", [logemail], one=True)["user_id"]
+            employee = query_db("SELECT * FROM employee WHERE user_id = ?", [user_id], one=True)
+            if employee:
+                session["role"] = "employee"
+            else:
+                session["role"] = "customer"
             return redirect(url_for("details", logemail=logemail, logpass=logpass))
         else:
             login_error = "Invalid email or password."
@@ -351,3 +357,6 @@ def checkout():
 if __name__ == "__main__":
     app.run(debug=True)
 
+@app.route("/stock")
+def stock():
+    return render_template("stock.html")
