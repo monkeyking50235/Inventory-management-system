@@ -50,23 +50,29 @@
                     </a>
                     <ul>
                         <li id="first_item"><a href="{{ url_for('home') }}">Home</a></li>
+                        {% if session.get('role') == 'customer' %}
                         <li><a href="{{ url_for('menu') }}">Menu</a></li>
+                        {% elif session.get('role') == 'employee' %}
+                        {% endif %}
                         {% if session.get("name") %}
                             <li><a href="{{ url_for('logout') }}" onclick="localStorage.setItem('darkMode','false')">Logout</a></li>
                         {% endif %}
                     </ul>
                 </div>
                 <div id="right">
-                        <button>
-                            <img src="{{ url_for('static', 
-                            filename='images/cart.png') }}" 
-                            alt="Cart">
-                        </button>
                     <a href="{{ url_for('profile') }}">
                         <img id="profile-image" 
                         src="{{ url_for('static', filename='images/profile.png') }}"
                         alt="Profile">
                     </a>
+                    {% if session.get('role') == 'customer' %}
+                        <button>
+                            <img src="{{ url_for('static', 
+                            filename='images/cart.png') }}" 
+                            alt="Cart">
+                        </button>
+                    {% elif session.get('role') == 'employee' %}
+                    {% endif %}
                 </div>
             </nav>
         </header></div>

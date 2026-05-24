@@ -75,11 +75,11 @@ def get_user_id():
 """ Selects the info from the order table for the current user, ensuring its 
 a current order. If no order exists then it makes one"""
 def get_or_create_cart_order(user_id):
-    order = query_db("SELECT * FROM orders WHERE user_id = ? AND status = 'cart'", [user_id], one=True)
+    order = query_db("SELECT * FROM order_entry WHERE user_id = ? AND status = 'cart'", [user_id], one=True)
     if order:
         return order["order_id"]
     db = get_db()
-    cur = db.execute("INSERT INTO orders (user_id, status) VALUES (?, ?)", (user_id, "cart"))
+    cur = db.execute("INSERT INTO order_entry (user_id, status) VALUES (?, ?)", (user_id, "cart"))
     db.commit()
     return cur.lastrowid
 
@@ -177,7 +177,7 @@ def checkout_success():
         return redirect(url_for("checkout", error="Your cart is empty. Please add items before purchasing."))
     cart_total = total()
     db = get_db()
-    db.execute("UPDATE orders SET status = 'Placed', store_id = 1, item_id = ?, cost = ? WHERE order_id = ?", (order_id, cart_total, order_id,))
+    db.execute("UPDATE order_entry SET status = 'Placed', store_id = 1, item_id = ?, cost = ? WHERE order_id = ?", (order_id, cart_total, order_id,))
     db.commit()
     #This print would be replaced with a way to send this order to the store making it.
     for item in cart_items:
@@ -282,7 +282,7 @@ def logout():
     user_id = get_user_id()
     order_id = get_or_create_cart_order(user_id)
     db = get_db()
-    db.execute("UPDATE orders SET status = 'Cancelled' WHERE order_id = ?", (order_id,))
+    db.execute("UPDATE order_entry SET status = 'Cancelled' WHERE order_id = ?", (order_id,))
     db.commit()
     session.clear()
     return redirect(url_for("home"))
@@ -359,4 +359,6 @@ if __name__ == "__main__":
 
 @app.route("/stock")
 def stock():
+    if session.get("role") != "employee":
+        return redirect(url_for("home"))
     return render_template("stock.html")
