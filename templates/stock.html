@@ -1,4 +1,9 @@
 {% extends "layout.html" %}
 {% block body %}
+<p id="total_stock_price">
+    <br><br><br><br><br><br><br>
+    The total value of the current stock is ${{ "%.2f"|format(total_value) }}
+</p>
+
 
 {% endblock %}

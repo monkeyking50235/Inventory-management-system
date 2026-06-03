@@ -53,6 +53,7 @@
                         {% if session.get('role') == 'customer' %}
                         <li><a href="{{ url_for('menu') }}">Menu</a></li>
                         {% elif session.get('role') == 'employee' %}
+                        <li><a href="{{ url_for('stock') }}">Stock</a></li>
                         {% endif %}
                         {% if session.get("name") %}
                             <li><a href="{{ url_for('logout') }}" onclick="localStorage.setItem('darkMode','false')">Logout</a></li>

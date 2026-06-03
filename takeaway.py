@@ -72,6 +72,18 @@ def get_user_id():
     row = query_db("SELECT user_id FROM user WHERE email = ?", [session["name"]], one=True)
     return row["user_id"] if row else None
 
+def get_total_price():
+    total_value = query_db("SELECT SUM(order_price * current_quantity) FROM stock")
+    if total_value and total_value[0][0] is not None:
+        return round(total_value[0][0], 2)
+    return 0.00
+
+def get_stock_items():
+    items = query_db("SELECT SUM(order_price * current_quantity) FROM stock")
+    if total_value and total_value[0][0] is not None:
+        return round(total_value[0][0], 2)
+    return 0.00
+
 """ Selects the info from the order table for the current user, ensuring its 
 a current order. If no order exists then it makes one"""
 def get_or_create_cart_order(user_id):
@@ -353,12 +365,14 @@ def checkout():
     error = request.args.get("error")
     return render_template("checkout.html", details=details, cart_items=cart_items, cart_total=cart_total, order_placed=order_placed, error=error)
 
-
-if __name__ == "__main__":
-    app.run(debug=True)
-
 @app.route("/stock")
 def stock():
     if session.get("role") != "employee":
         return redirect(url_for("home"))
-    return render_template("stock.html")
+    total_value = get_total_price()
+    stock_item = 
+    return render_template("stock.html", total_value=total_value)
+
+if __name__ == "__main__":
+    app.run(debug=True)
+
