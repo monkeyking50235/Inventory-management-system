@@ -370,8 +370,25 @@ def stock():
     if session.get("role") != "employee":
         return redirect(url_for("home"))
     total_value = get_total_price()
-    stock_item = 
     return render_template("stock.html", total_value=total_value)
+
+@app.route("/employees")
+def employees():
+    if session.get("role") != "employee":
+        return redirect(url_for("home"))
+    return render_template("employees.html")
+
+@app.route("/data")
+def data():
+    if session.get("role") != "employee":
+        return redirect(url_for("home"))
+    return render_template("data.html")
+
+@app.route("/suppliers")
+def suppliers():
+    if session.get("role") != "employee":
+        return redirect(url_for("home"))
+    return render_template("suppliers.html")
 
 if __name__ == "__main__":
     app.run(debug=True)

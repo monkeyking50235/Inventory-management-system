@@ -54,6 +54,9 @@
                         <li><a href="{{ url_for('menu') }}">Menu</a></li>
                         {% elif session.get('role') == 'employee' %}
                         <li><a href="{{ url_for('stock') }}">Stock</a></li>
+                        <li><a href="{{ url_for('employees') }}">Employees</a></li>
+                        <li><a href="{{ url_for('data') }}">Data analysis</a></li>
+                        <li><a href="{{ url_for('suppliers') }}">Suppliers</a></li>
                         {% endif %}
                         {% if session.get("name") %}
                             <li><a href="{{ url_for('logout') }}" onclick="localStorage.setItem('darkMode','false')">Logout</a></li>
