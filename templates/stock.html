@@ -1,9 +1,22 @@
 {% extends "layout.html" %}
 {% block body %}
-<p id="total_stock_price">
+<p 
+    id="total_stock_price">
+</p>
     <br><br><br><br><br><br><br>
     The total value of the current stock is ${{ "%.2f"|format(total_value) }}
-</p>
+
+    {% for item in info %}
+    <div class = "stock_items">
+        <p>
+            {{ item[0] }},  {{ item[1] }},  {{ item[2] }},  {{ item[3] }}, {{ item[4] }}
+        </p>
+
+        <div class="flex-break"></div>
+    
+    {% endfor %}
+    </div>
+
 
 
 {% endblock %}

@@ -974,6 +974,15 @@ body .section {
     background: #dc3545;
 }
 
+.stock_items {
+    display:flex;
+}
+
+.flex-break {
+    flex-basis: 100%;
+    height: 0;
+}
+
 
 @media (max-width: 900px) {
     .checkout-flex-row, .checkout-details-columns {

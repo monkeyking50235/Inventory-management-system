@@ -370,7 +370,8 @@ def stock():
     if session.get("role") != "employee":
         return redirect(url_for("home"))
     total_value = get_total_price()
-    return render_template("stock.html", total_value=total_value)
+    info = query_db("""SELECT * FROM stock """)
+    return render_template("stock.html", total_value=total_value, info=info)
 
 @app.route("/employees")
 def employees():
