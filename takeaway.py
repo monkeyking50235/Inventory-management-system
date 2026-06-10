@@ -1,9 +1,12 @@
+from pydoc import text
 import sqlite3
+from unicodedata import category
 from flask import Flask, g, render_template, request, redirect, url_for, session
 from flask_session import Session
 import os
 from flask_sqlalchemy import SQLAlchemy
 from flask import flash, get_flashed_messages
+from datetime import datetime, timedelta
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///takeaway_ordering.db'
@@ -78,12 +81,6 @@ def get_total_price():
         return round(total_value[0][0], 2)
     return 0.00
 
-def get_stock_items():
-    items = query_db("SELECT SUM(order_price * current_quantity) FROM stock")
-    if total_value and total_value[0][0] is not None:
-        return round(total_value[0][0], 2)
-    return 0.00
-
 """ Selects the info from the order table for the current user, ensuring its 
 a current order. If no order exists then it makes one"""
 def get_or_create_cart_order(user_id):
@@ -113,12 +110,33 @@ def total():
     total = sum(item["item_cost"] * item["quantity"] for item in cart_items)
     total = round(total, 2)
     return total if total else 0
-# Creates the mini cart in the top right
 
+def expiry(arrival_date, experation_time):
+    current_time = datetime.now()
+    if arrival_date is None or arrival_date == "":
+        arrival_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d %H:%M:%S')
+    else: 
+        obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d %H:%M:%S')
+    expire_date = obtained_date + timedelta(days=experation_time)
+    if current_time >= expire_date:
+        return "expired"
+    else: 
+        days_left = (expire_date - current_time).days
+        life_percentage = (days_left/experation_time)*100
+        if life_percentage <= 20: {
+        (f"expires in {round(days_left, 1)} days"): text,
+        "warning": category
+        }
+        else:
+            return (f"expires in {round(days_left, 1)} days") 
+
+# Creates the mini cart in the top right
 @app.route("/cart")
 def cart():
     cart_total = total()
     return redirect(request.referrer, cart_total=cart_total)
+
 # When the add to cart button is pressed, adds item to cart
 @app.route('/add', methods=['POST'])
 def add_product_to_cart():
@@ -369,9 +387,24 @@ def checkout():
 def stock():
     if session.get("role") != "employee":
         return redirect(url_for("home"))
+    stock_list = []
     total_value = get_total_price()
     info = query_db("""SELECT * FROM stock """)
-    return render_template("stock.html", total_value=total_value, info=info)
+    for item in info:
+        expiry_info = expiry(item[5], item[4])
+        if category == "warning":
+            alert = "true"
+        else: alert = "false"
+        stock_info = {
+            "id": item[0],
+            "name": item[3],
+            "qty": item[2],
+            "price": item[1],
+            "expiry_length": expiry_info,
+            "alert": alert
+        }
+        stock_list.append(stock_info)
+    return render_template("stock.html", stock_list=stock_list, total_value=total_value)
 
 @app.route("/employees")
 def employees():

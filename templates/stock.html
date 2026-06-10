@@ -1,21 +1,26 @@
 {% extends "layout.html" %}
 {% block body %}
-<p 
-    id="total_stock_price">
-</p>
-    <br><br><br><br><br><br><br>
-    The total value of the current stock is ${{ "%.2f"|format(total_value) }}
 
-    {% for item in info %}
-    <div class = "stock_items">
-        <p>
-            {{ item[0] }},  {{ item[1] }},  {{ item[2] }},  {{ item[3] }}, {{ item[4] }}
-        </p>
+<br> <br>
 
-        <div class="flex-break"></div>
-    
+<table id="stock_table">
+    <tr>
+        <th>ID</th>
+        <th>Name</th>
+        <th>Quantity in stock</th>
+        <th>Price</th>
+        <th>Time till expiry</th>
+    </tr>
+    {% for item in stock_list %}
+        <tr>
+            <td>{{ item.id }}</td>
+            <td>{{ item.name }}</td>
+            <td>{{ item.qty }}</td>
+            <td>{{ item.price }}</td>
+            <td>{{ item.expiry_length }}</td>
+        </tr>
     {% endfor %}
-    </div>
+</table>
 
 
 
