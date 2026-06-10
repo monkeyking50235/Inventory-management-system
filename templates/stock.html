@@ -8,7 +8,7 @@
         <th>ID</th>
         <th>Name</th>
         <th>Quantity in stock</th>
-        <th>Price</th>
+        <th>Order price</th>
         <th>Time till expiry</th>
     </tr>
     {% for item in stock_list %}
@@ -16,7 +16,7 @@
             <td>{{ item.id }}</td>
             <td>{{ item.name }}</td>
             <td>{{ item.qty }}</td>
-            <td>{{ item.price }}</td>
+            <td>${{ "%.2f"|format(item.price) }}</td>
             <td>{{ item.expiry_length }}</td>
         </tr>
     {% endfor %}
