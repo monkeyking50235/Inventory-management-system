@@ -125,11 +125,11 @@ def expiry(arrival_date, experation_time):
         days_left = (expire_date - current_time).days
         life_percentage = (days_left/experation_time)*100
         if life_percentage <= 20: {
-        (f"expires in {round(days_left, 1)} days"): text,
+        (f"Expires in {round(days_left, 1)} days"): text,
         "warning": category
         }
         else:
-            return (f"expires in {round(days_left, 1)} days") 
+            return (f"Expires in {round(days_left, 1)} days") 
 
 # Creates the mini cart in the top right
 @app.route("/cart")

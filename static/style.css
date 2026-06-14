@@ -983,14 +983,82 @@ body .section {
     height: 0;
 }
 #stock_table {
-    border-collapse: separate;
-    border-spacing: 10px;
-    empty-cells: show;
+    border-collapse: collapse;
+    width: 100%;
+    max-width: 900px;
+    margin: 20px auto;
 }
 
 table, td, th {
         border: 1.5px solid blue;
     }
+
+.stock_buttons{
+    display: flex;
+    gap: 10px;
+
+    }
+
+.inline-form{
+    margin: 0;
+    display: inline;
+}
+
+.order_button, .waste_button {
+    color: black;
+    background-color: #D3D3D3;
+    padding: 8px 14px;
+    cursor: pointer;
+    white-space: nowrap;
+}
+
+@media (max-width: 800) {
+    #stock_table thead {
+        display: none;
+    }
+
+    #stock_table tbody tr.data-row {
+        display: grid;
+        grid-template-columns: 1fr;
+        background: #ffffff;
+        border: 1.5px solid blue;
+        margin-bottom: 15px;
+        padding: 12px;
+        border-radius: 6px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    }
+
+    #stock_table tbody tr.data-row td::before {
+        content:attr(data-label);
+        font-weight: bold;
+        color: #333;
+    }
+
+    .stock_buttons {
+        width: 100%;
+        justify-content: space-between;
+    }
+
+    .stock_buttons form {
+        flex: 1;
+    }
+
+    .stock_buttons button {
+        width: 100%;
+    }
+}
+
+@media (min-width: 801px) {
+    table, td, th {
+        border: 1.5px solid blue;
+        padding: 12px;
+        text-align: left;
+    }
+
+    .action-cell {
+        width: 240px;
+    }
+}
 
 @media (max-width: 900px) {
     .checkout-flex-row, .checkout-details-columns {

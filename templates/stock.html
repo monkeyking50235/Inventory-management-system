@@ -4,22 +4,41 @@
 <br> <br>
 
 <table id="stock_table">
-    <tr>
-        <th>ID</th>
-        <th>Name</th>
-        <th>Quantity in stock</th>
-        <th>Order price</th>
-        <th>Time till expiry</th>
-    </tr>
-    {% for item in stock_list %}
+    <thead>
         <tr>
-            <td>{{ item.id }}</td>
-            <td>{{ item.name }}</td>
-            <td>{{ item.qty }}</td>
-            <td>${{ "%.2f"|format(item.price) }}</td>
-            <td>{{ item.expiry_length }}</td>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Quantity in stock</th>
+            <th>Order price</th>
+            <th>Time till expiry</th>
         </tr>
-    {% endfor %}
+    </thead>
+    <tbody>
+        {% for item in stock_list %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.qty }}</td>
+                <td>${{ "%.2f"|format(item.price) }}</td>
+                <td>{{ item.expiry_length }}</td>
+            </tr>
+            <tr class="table_buttons">
+                <td colspan="5">
+                    <div class="stock_buttons">
+                        <form action="/employee/stock/waste" method="POST" class="inline-form">
+                            <input type="hidden" name="stock_id" value="{{ item.id}}">
+                            <button type="submit" class="waste_button"> Log damage/waste</button>
+                        </form>
+                        <form action="/employee/suppliers" method="GET" class="inline-form">
+                            <input type="hidden" name="requested_stock_id" value="{{ item.id}}">
+                            <button type="submit" class="order_button"> Order more</button>
+                        </form>
+                    </div>
+                </td>
+            </tr>
+        {% endfor %}
+    </tbody>
+    
 </table>
 
 
