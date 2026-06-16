@@ -2,6 +2,9 @@
 {% block body %}
 
 <!--promoting accounts on left, managing on right. Seems like coding so I'll do it later--->
-
+<form action="{{ url_for('add_product_to_cart') }}" method="post">
+    <input name="account_id">
+    <button type="submit">Add account as employee</button>
+  </form>
 
 {% endblock %}

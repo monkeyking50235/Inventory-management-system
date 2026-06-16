@@ -295,7 +295,11 @@ def about():
 
 @app.route("/layout")
 def layout():
-    return render_template("layout.html", session=session)
+    owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
+    for item in owner:
+        if item[0] == 1:
+            perms = "yes"
+    return render_template("layout.html", session=session, perms=perms)
 
 @app.route("/details")
 def details():
@@ -408,9 +412,11 @@ def stock():
 
 @app.route("/employees")
 def employees():
-    if session.get("role") != "employee":
-        return redirect(url_for("home"))
-    return render_template("employees.html")
+    owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
+    for item in owner:
+        if item[0] == 1:
+            return render_template("employees.html")
+    return redirect(url_for("home"))
 
 @app.route("/data")
 def data():
