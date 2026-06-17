@@ -44,6 +44,16 @@ def inject_cart_data():
         db_cart_total_price=total_price
     )
 
+@app.context_processor
+def permissions():
+    perms = "no"
+    if "name" in session:
+        owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
+        for item in owner:
+            if item[0] == 1:
+                perms = "yes"
+    return dict(perms=perms)
+
 #Gets info from the database and prints it nicely
 
 def get_db():
@@ -295,11 +305,7 @@ def about():
 
 @app.route("/layout")
 def layout():
-    owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
-    for item in owner:
-        if item[0] == 1:
-            perms = "yes"
-    return render_template("layout.html", session=session, perms=perms)
+    return render_template("layout.html", session=session)
 
 @app.route("/details")
 def details():
@@ -410,12 +416,12 @@ def stock():
         stock_list.append(stock_info)
     return render_template("stock.html", stock_list=stock_list, total_value=total_value)
 
-@app.route("/employees")
-def employees():
+@app.route("/owner_dashboard")
+def owner_dashboard():
     owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
     for item in owner:
         if item[0] == 1:
-            return render_template("employees.html")
+            return render_template("owner_dashboard.html")
     return redirect(url_for("home"))
 
 @app.route("/data")

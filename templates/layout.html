@@ -58,7 +58,7 @@
                         <li><a href="{{ url_for('suppliers') }}">Suppliers</a></li>
                         {% endif %}
                         {% if perms == 'yes' %}
-                            <li><a href="{{ url_for('employees') }}">Employees</a></li>
+                            <li><a href="{{ url_for('owner_dashboard') }}">Owner dashboard</a></li>
                         {% endif %}
                         {% if session.get("name") %}
                             <li><a href="{{ url_for('logout') }}" onclick="localStorage.setItem('darkMode','false')">Logout</a></li>
