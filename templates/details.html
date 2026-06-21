@@ -15,6 +15,16 @@
                 <span class="slider round"></span>
             </label>
         </div>
+        <div class="setting-item">
+            <h3>
+                Clock in/out
+            </h3>
+            <!-- Rounded switch, code from w3schools -->
+            <label class="switch">
+                <input type="checkbox" onchange="working()" id = "status">
+                <span class="slider round"></span>
+            </label>
+        </div>
     </div>
     <div class="details">
         <h1>
@@ -85,6 +95,11 @@
         toggleOverlaydetails();
         {% endif %}
     });
+
+    function working() {
+        fetch("/status", {method: 'POST'})
+    }
+    
 </script>
 
 {% endblock %}

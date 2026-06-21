@@ -140,6 +140,18 @@ def expiry(arrival_date, experation_time):
         }
         else:
             return (f"Expires in {round(days_left, 1)} days") 
+@app.route("/status", methods=['POST'])        
+def status():
+    db = get_db()
+    user_id = get_user_id()
+    current_status = query_db("SELECT working FROM employee WHERE user_id = ?", (user_id,))
+    for item in current_status:
+        if item[0] == 1:
+            db.execute("UPDATE employee SET working = 0 WHERE user_id = ?", (user_id,))
+        elif item[0] == 0:
+            db.execute("UPDATE employee SET working = 1 WHERE user_id = ?", (user_id,))
+    db.commit()
+
 
 # Creates the mini cart in the top right
 @app.route("/cart")
@@ -399,7 +411,7 @@ def stock():
         return redirect(url_for("home"))
     stock_list = []
     total_value = get_total_price()
-    info = query_db("""SELECT * FROM stock """)
+    info = query_db("SELECT * FROM stock ")
     for item in info:
         expiry_info = expiry(item[5], item[4])
         if category == "warning":
