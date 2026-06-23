@@ -15,16 +15,33 @@
                 <span class="slider round"></span>
             </label>
         </div>
-        <div class="setting-item">
-            <h3>
-                Clock in/out
-            </h3>
-            <!-- Rounded switch, code from w3schools -->
-            <label class="switch">
-                <input type="checkbox" onchange="working()" id = "status">
-                <span class="slider round"></span>
-            </label>
-        </div>
+        {% if session.get('role') == 'employee' %}
+            <div class="setting-item">
+                <h3>
+                    Clock in/out
+                </h3>
+                <!-- Rounded switch, code from w3schools -->
+                <label class="switch">
+                    <input type="checkbox" onchange="working()" id = "status">
+                    <span class="slider round"></span>
+                </label>
+            </div>
+            <div class="setting-item">
+                <h3>
+                    Default page
+                </h3>
+                <div class="dropdown">
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      Dropdown button
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                      <a class="dropdown-item" href="#">Action</a>
+                      <a class="dropdown-item" href="#">Another action</a>
+                      <a class="dropdown-item" href="#">Something else here</a>
+                    </div>
+                  </div>
+            </div>
+        {% endif %}
     </div>
     <div class="details">
         <h1>
