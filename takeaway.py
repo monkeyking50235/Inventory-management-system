@@ -446,7 +446,31 @@ def data():
 def suppliers():
     if session.get("role") != "employee":
         return redirect(url_for("home"))
-    return render_template("suppliers.html")
+    supplier_list = []
+    info = query_db("SELECT * FROM supplier ")
+    for item in info:
+        supplier_info = {
+            "supplier_id": item[0],
+            "name": item[1],
+            "address": item[2],
+            "email": item[3],
+            "phone": item[4],
+            "stock_id": item[5],
+        }
+    supplier_list.append(supplier_info)
+    order_list = []
+    inform = query_db("SELECT * FROM supply_order ")
+    for item in inform:
+        order_info = {
+            "supply_order_id": item[0],
+            "supplier_id": item[1],
+            "store_id": item[2],
+            "item_id": item[3],
+            "cost": item[4],
+            "status": item[5],
+        }
+    order_list.append(order_info)
+    return render_template("suppliers.html", supplier_list=supplier_list, order_list=order_list)
 
 if __name__ == "__main__":
     app.run(debug=True)

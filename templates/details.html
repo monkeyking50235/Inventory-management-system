@@ -1,5 +1,15 @@
 {% extends "layout.html" %}
 {% block body %}
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@4.6.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const start_page = localStorage.getItem('default_page');
+    const redirected = sessionStorage.getItem('redirect');
+    if (start_page && !redirected && window.location.pathname !== start_page) {
+        sessionStorage.setItem('redirect', 'true');
+        window.location.href = start_page;
+    }
+</script>
 <section class="profile">
     <div class="settings">
         <h1 class="settings">
@@ -30,14 +40,20 @@
                 <h3>
                     Default page
                 </h3>
+                <!-- Code from Black Dashboard Flask -->
                 <div class="dropdown">
                     <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                       Dropdown button
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
-                      <a class="dropdown-item" href="#">Action</a>
-                      <a class="dropdown-item" href="#">Another action</a>
-                      <a class="dropdown-item" href="#">Something else here</a>
+                        <a class="dropdown-item" href="/details" onclick="default_page('/');">Home page</a>
+                        <a class="dropdown-item" href="/details" onclick="default_page('/stock');">Stock page</a>
+                        <a class="dropdown-item" href="/details" onclick="default_page('/data');">Data page</a>
+                        <a class="dropdown-item" href="/details" onclick="default_page('/suppliers');">Suppliers page</a>
+                        {% if perms == 'yes' %}
+                            <a class="dropdown-item" href="/details" onclick="default_page('/owner_dashboard');">Dashboard</a>
+                        {% endif %}
+                        <a class="dropdown-item" href="/details" onclick="default_page('/details');">Profile</a>
                     </div>
                   </div>
             </div>
@@ -115,6 +131,10 @@
 
     function working() {
         fetch("/status", {method: 'POST'})
+    }
+
+    function default_page(page) {
+        localStorage.setItem('default_page', page);
     }
     
 </script>

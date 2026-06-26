@@ -61,7 +61,9 @@
                             <li><a href="{{ url_for('owner_dashboard') }}">Owner dashboard</a></li>
                         {% endif %}
                         {% if session.get("name") %}
-                            <li><a href="{{ url_for('logout') }}" onclick="localStorage.setItem('darkMode','false')">Logout</a></li>
+                            <li><a href="{{ url_for('logout') }}" 
+                                onclick="localStorage.setItem('darkMode','false'); 
+                                sessionStorage.clear();">Logout</a></li>
                         {% endif %}
                     </ul>
                 </div>
