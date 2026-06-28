@@ -13,6 +13,26 @@
 <br>
 <br>
 <br>
+<table id="order_table">
+    <thead>
+        <tr>
+            <th>Item name</th>
+            <th>Quantity</th>
+            <th>Expected delivery date</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in order_list %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.quantity }}</td>
+                <td>{{ item.email }}</td>
+                <td>{{ item.status }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 <table id="supplier_table">
     <thead>
         <tr>

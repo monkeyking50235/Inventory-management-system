@@ -457,19 +457,29 @@ def suppliers():
             "phone": item[4],
             "stock_id": item[5],
         }
-    supplier_list.append(supplier_info)
+        supplier_list.append(supplier_info)
     order_list = []
     inform = query_db("SELECT * FROM supply_order ")
-    for item in inform:
-        order_info = {
-            "supply_order_id": item[0],
-            "supplier_id": item[1],
-            "store_id": item[2],
-            "item_id": item[3],
-            "cost": item[4],
-            "status": item[5],
-        }
-    order_list.append(order_info)
+    if inform:
+        for item in inform:
+            item_name = query_db("SELECT name FROM stock WHERE stock_id = ?", [item[3]])
+            supplier_name = query_db("SELECT name FROM supplier WHERE supplier_id = ?", [item[1]])
+            order_info = {
+                "supply_order_id": item[0],
+                "store_id": item[2],
+                "cost": item[4],
+                "status": item[5],
+                "quantity": item[6],
+            }
+            for x in item_name:
+                order_info["item_name"] = x
+            for y in supplier_name:
+                order_info["supplier_name"] = y
+            print(order_info)
+            order_list.append(order_info)
+    else:
+        order_info = "Nothing"
+        order_list.append(order_info)
     return render_template("suppliers.html", supplier_list=supplier_list, order_list=order_list)
 
 if __name__ == "__main__":
