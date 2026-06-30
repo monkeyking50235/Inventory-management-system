@@ -17,6 +17,7 @@
     <thead>
         <tr>
             <th>Item name</th>
+            <th>Supplier</th>
             <th>Quantity</th>
             <th>Expected delivery date</th>
             <th>Status</th>
@@ -25,7 +26,8 @@
     <tbody>
         {% for item in order_list %}
             <tr>
-                <td>{{ item.name }}</td>
+                <td>{{ item.item_name }}</td>
+                <td>{{ item.supplier_name }}</td>
                 <td>{{ item.quantity }}</td>
                 <td>{{ item.email }}</td>
                 <td>{{ item.status }}</td>

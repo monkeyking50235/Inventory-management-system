@@ -472,10 +472,9 @@ def suppliers():
                 "quantity": item[6],
             }
             for x in item_name:
-                order_info["item_name"] = x
+                order_info["item_name"] = x[0]
             for y in supplier_name:
-                order_info["supplier_name"] = y
-            print(order_info)
+                order_info["supplier_name"] = y[0]
             order_list.append(order_info)
     else:
         order_info = "Nothing"
