@@ -27,11 +27,11 @@
                     <div class="stock_buttons">
                         <form action="/employee/stock/waste" method="POST" class="inline-form">
                             <input type="hidden" name="stock_id" value="{{ item.id}}">
-                            <button type="submit" class="waste_button"> Log damage/waste</button>
+                            <button type="submit" class="waste_button">Log damage/waste</button>
                         </form>
                         <form action="/employee/suppliers" method="GET" class="inline-form">
                             <input type="hidden" name="requested_stock_id" value="{{ item.id}}">
-                            <button type="submit" class="order_button"> Order more</button>
+                            <button type="submit" class="order_button">Order more</button>
                         </form>
                     </div>
                 </td>

@@ -35,6 +35,13 @@
         {% endfor %}
     </tbody>
 </table>
+        {% for item in order_list %}
+                    <form action="{{ url_for('received') }}" method="POST">
+                    <input type="hidden" name="supply_order_id" value="{{ item.supply_order_id}}">
+                    <input type="hidden" name="item_id" value="{{ item.item_id}}">
+                    <input type="hidden" name="quantity" value="{{ item.quantity}}">
+                    <button type="submit" class="suppliers_button">Mark as received</button>
+        {% endfor %}
 <table id="supplier_table">
     <thead>
         <tr>

@@ -467,6 +467,7 @@ def suppliers():
             order_info = {
                 "supply_order_id": item[0],
                 "store_id": item[2],
+                "item_id": item[3],
                 "cost": item[4],
                 "status": item[5],
                 "quantity": item[6],
@@ -480,6 +481,22 @@ def suppliers():
         order_info = "Nothing"
         order_list.append(order_info)
     return render_template("suppliers.html", supplier_list=supplier_list, order_list=order_list)
+
+@app.route("/received", methods=["POST"])
+def received():
+    supply_order_id = request.form.get("supply_order_id")
+    quantity = request.form.get("quantity")
+    stock_id = request.form.get("item_id")
+    current_quantity = query_db("SELECT current_quantity FROM stock WHERE stock_id = ?", (stock_id))
+    for item in current_quantity:
+        current_quantity = item[0]
+    new_quantity = int(current_quantity) + int(quantity)
+    db = get_db()
+    cursor = db.cursor()
+    cursor.execute("DELETE FROM supply_order WHERE supply_order_id = ?", (supply_order_id,))
+    cursor.execute("UPDATE stock SET current_quantity = ? WHERE stock_id = ? ", (new_quantity, stock_id,))
+    db.commit()
+    return redirect(url_for("suppliers"))
 
 if __name__ == "__main__":
     app.run(debug=True)
