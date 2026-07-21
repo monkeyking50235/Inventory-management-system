@@ -42,8 +42,8 @@
                 </h3>
                 <!-- Code from Black Dashboard Flask -->
                 <div class="dropdown">
-                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                      Dropdown button
+                    <button class="btn btn-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false" >
+                        
                     </button>
                     <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
                         <a class="dropdown-item" href="/details" onclick="default_page('/');">Home page</a>
@@ -135,8 +135,15 @@
 
     function default_page(page) {
         localStorage.setItem('default_page', page);
+        document.getElementById('dropdownMenuButton').textContent = page;
     }
-    
+    const saved_page = localStorage.getItem('default_page');
+    if (saved_page === "/") {
+        document.getElementById('dropdownMenuButton').textContent = "home";
+    }
+    else if (saved_page) {
+        document.getElementById('dropdownMenuButton').textContent = saved_page.startsWith('/') ? saved_page.slice(1) : saved_page;
+    }
 </script>
 
 {% endblock %}
