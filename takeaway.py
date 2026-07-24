@@ -54,6 +54,7 @@ def permissions():
                 perms = "yes"
     return dict(perms=perms)
 
+
 #Gets info from the database and prints it nicely
 
 def get_db():
@@ -77,6 +78,23 @@ def close_connection(exception):
     db = getattr(g, '_database', None)
     if db is not None:
         db.close()
+
+@app.route("/employee/stock/waste", methods=["POST"])
+def log_waste():
+    stock_id = request.form.get("stock_id")
+    quantity = int(request.form.get("quantity", 1))
+    employee_id = session.get("user_id")
+    db = get_db()
+    item = query_db("SELECT name, order_price, current_quantity FROM stock WHERE stock_id = ?", (stock_id), one=True)
+    cost = quantity * item["order_price"]
+    time = datetime.now().strftime("%Y-%m-%d")
+    db.execute("UPDATE stock SET current_quantity = current_quantity - ? WHERE stock_id = ?", (quantity, stock_id))
+    db.execute("""INSERT INTO waste(stock_id, name, quantity, cost, time, employee_id)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+                (stock_id, item["name"], quantity, cost, time, employee_id))
+    db.commit()
+    flash (f"Logged {quantity}x {item['name']} as waste.")
+    return redirect(request.referrer)
 
 # Gets the users id from the database
 def get_user_id():
@@ -124,22 +142,22 @@ def total():
 def expiry(arrival_date, experation_time):
     current_time = datetime.now()
     if arrival_date is None or arrival_date == "":
-        arrival_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d %H:%M:%S')
+        arrival_date = datetime.now().strftime('%Y-%m-%d')
+        obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d')
     else: 
-        obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d %H:%M:%S')
+        obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d')
     expire_date = obtained_date + timedelta(days=experation_time)
     if current_time >= expire_date:
         return "expired"
     else: 
         days_left = (expire_date - current_time).days
         life_percentage = (days_left/experation_time)*100
-        if life_percentage <= 20: {
-        (f"Expires in {round(days_left, 1)} days"): text,
-        "warning": category
-        }
+        if life_percentage <= 20: 
+            return {"text": f"Expires in {round(days_left, 1)} days",
+            category: "warning"}
         else:
-            return (f"Expires in {round(days_left, 1)} days") 
+            return {"text": f"Expires in {round(days_left, 1)} days",
+            category: "safe"}
 @app.route("/status", methods=['POST'])        
 def status():
     db = get_db()
@@ -411,7 +429,7 @@ def stock():
         return redirect(url_for("home"))
     stock_list = []
     total_value = get_total_price()
-    info = query_db("SELECT * FROM stock ")
+    info = query_db("SELECT * FROM stock ORDER BY expiration_time")
     for item in info:
         expiry_info = expiry(item[5], item[4])
         if category == "warning":
@@ -440,7 +458,13 @@ def owner_dashboard():
 def data():
     if session.get("role") != "employee":
         return redirect(url_for("home"))
-    return render_template("data.html")
+    cost = 0
+    sales = query_db("SELECT cost From order_entry Where cost IS NOT NULL")
+    for sale in sales:
+        cost = cost + sale[0]
+    average = cost/len(sales)
+    
+    return render_template("data.html", cost=cost, average=round(average, 2))
 
 @app.route("/suppliers")
 def suppliers():

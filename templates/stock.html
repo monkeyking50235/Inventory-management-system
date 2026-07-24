@@ -20,13 +20,21 @@
                 <td>{{ item.name }}</td>
                 <td>{{ item.qty }}</td>
                 <td>${{ "%.2f"|format(item.price) }}</td>
-                <td>{{ item.expiry_length }}</td>
+                <td><span class="status_bridge {% if item.expiry_length == 'expired' %}alert-accent{% elif item.expiry_length.category == 'warning' %}warning-accent{% else %}safe-accent{% endif %}">
+                    {% if item.expiry_length == 'expired' %}
+                        Expired
+                    {% else %}
+                        {{ item.expiry_length.text }}
+                    {% endif %}
+                </span></td>
+
             </tr>
             <tr class="table_buttons">
                 <td colspan="5">
                     <div class="stock_buttons">
                         <form action="/employee/stock/waste" method="POST" class="inline-form">
                             <input type="hidden" name="stock_id" value="{{ item.id}}">
+                            <input type="number" name="quantity" value="1" min="1" max="{{ item.qty}}" required>
                             <button type="submit" class="waste_button">Log damage/waste</button>
                         </form>
                         <form action="/employee/suppliers" method="GET" class="inline-form">
