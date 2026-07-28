@@ -3,18 +3,25 @@
 <br>
 <br>
 <br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
+
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Quantity Wasted</th>
+            <th>Cost</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in waste_list %}
+            <tr>
+                <td>{{ item.name }}</td>
+                <td>{{ item.total }}</td>
+                <td>{{ item.cost }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 <br>
 Total Sales: ${{cost}}<br>
 Average order cost: ${{average}}

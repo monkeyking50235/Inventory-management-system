@@ -79,7 +79,7 @@ def close_connection(exception):
     if db is not None:
         db.close()
 
-@app.route("/employee/stock/waste", methods=["POST"])
+@app.route("/waste", methods=["POST"])
 def log_waste():
     stock_id = request.form.get("stock_id")
     quantity = int(request.form.get("quantity", 1))
@@ -463,8 +463,17 @@ def data():
     for sale in sales:
         cost = cost + sale[0]
     average = cost/len(sales)
+    waste_list = []
+    info = query_db("SELECT name, sum(quantity) as total, cost FROM waste WHERE time >= datetime('now', '-30 days') GROUP BY name ORDER BY total DESC")
+    for item in info:
+        waste_info = {
+            "name": item[0],
+            "total": item[1],
+            "cost": item[2],
+        }
+        waste_list.append(waste_info)
     
-    return render_template("data.html", cost=cost, average=round(average, 2))
+    return render_template("data.html", cost=cost, average=round(average, 2), waste_list=waste_list)
 
 @app.route("/suppliers")
 def suppliers():
