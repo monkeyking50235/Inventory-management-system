@@ -1,7 +1,44 @@
 {% extends "layout.html" %}
 {% block body %}
-
 <!--promoting accounts on left, managing on right. Seems like coding so I'll do it later--->
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+<table>
+    <thead>
+        <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Job</th>
+            <th>Email</th>
+            <th>Phone number</th>
+            <th>Address</th>
+            <th>Store</th>
+            <th>Status</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for item in employee_list %}
+            <tr>
+                <td>{{ item.id }}</td>
+                <td>{{ item.name }}</td>
+                <td>{{ item.job }}</td>
+                <td>{{ item.email }}</td>
+                <td>{{ item.phone_number }}</td>
+                <td>{{ item.address }}</td>
+                <td>{{ item.store }}</td>
+                <td>{{ item.working_status }}</td>
+            </tr>
+        {% endfor %}
+    </tbody>
+</table>
 <form action="{{ url_for('add_product_to_cart') }}" method="post">
     <input name="account_id">
     <button type="submit">Add account as employee</button>

@@ -448,10 +448,32 @@ def stock():
 
 @app.route("/owner_dashboard")
 def owner_dashboard():
+    employee_list = []
+    info = query_db("SELECT * FROM employee")
+    for item in info:
+        if item[8] == 1:
+            work_status = "Working"
+        else:
+            work_status = "Not working"
+        store_id = item[6]
+        store_name = query_db("SELECT address FROM store WHERE store_id = ?", (store_id,))
+        for thing in store_name:
+            store_name = thing[0]
+        employee_info = {
+            "id": item[0],
+            "name": item[1],
+            "job": item[2],
+            "email": item[3],
+            "phone_number": item[4],
+            "address": item[5],
+            "store": store_name,
+            "working_status": work_status
+        }
+        employee_list.append(employee_info)
     owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
     for item in owner:
         if item[0] == 1:
-            return render_template("owner_dashboard.html")
+            return render_template("owner_dashboard.html", employee_list=employee_list)
     return redirect(url_for("home"))
 
 @app.route("/data")
