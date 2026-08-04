@@ -54,7 +54,6 @@ def permissions():
                 perms = "yes"
     return dict(perms=perms)
 
-
 #Gets info from the database and prints it nicely
 
 def get_db():
@@ -83,7 +82,10 @@ def close_connection(exception):
 def log_waste():
     stock_id = request.form.get("stock_id")
     quantity = int(request.form.get("quantity", 1))
-    employee_id = session.get("user_id")
+    logemail = session["name"] 
+    employee_data = query_db("SELECT employee_id, name FROM employee WHERE email = ?", (logemail,), one=True)
+    employee_id = employee_data[0]
+    name = employee_data[1]
     db = get_db()
     item = query_db("SELECT name, order_price, current_quantity FROM stock WHERE stock_id = ?", (stock_id), one=True)
     cost = quantity * item["order_price"]
@@ -94,6 +96,9 @@ def log_waste():
                 (stock_id, item["name"], quantity, cost, time, employee_id))
     db.commit()
     flash (f"Logged {quantity}x {item['name']} as waste.")
+    with open("log.txt", "a") as f:
+        f.write(f"{name} logged {quantity}x {item['name']} as waste")
+
     return redirect(request.referrer)
 
 # Gets the users id from the database
