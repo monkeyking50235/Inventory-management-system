@@ -1,6 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
-<!--promoting accounts on left, managing on right. Seems like coding so I'll do it later--->
+<!--promoting accounts on left, managing on right. file logs, adding items to menu removing items, suppliers, etc. Seems like coding so I'll do it later--->
 
 <br>
 <br>
@@ -39,9 +39,33 @@
         {% endfor %}
     </tbody>
 </table>
-<form action="{{ url_for('add_product_to_cart') }}" method="post">
+<form action="{{ url_for('add_employee') }}" method="post">
     <input name="account_id">
     <button type="submit">Add account as employee</button>
   </form>
+<form action="{{ url_for('remove_employee') }}" method="post">
+    <input name="account_id">
+    <button type="submit">Remove employee acount</button>
+  </form>
+<form action="{{ url_for('add_menu_item') }}" method="post">
+    <input name="account_id">
+    <button type="submit">Add item to menu</button>
+  </form>
+<form action="{{ url_for('remove_menu_item') }}" method="post">
+    <input name="account_id">
+    <button type="submit">Remove item from menu</button>
+  </form>
+<form action="{{ url_for('add_supplier') }}" method="post">
+    <input name="account_id">
+    <button type="submit">Add supplier</button>
+  </form>
+<form action="{{ url_for('remove_supplier') }}" method="post">
+    <input name="account_id">
+    <button type="submit">Remove supplier</button>
+  </form>
+
+  <body id="log_right">
+        {{logs}}
+  </body>
 
 {% endblock %}

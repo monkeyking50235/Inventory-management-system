@@ -37,8 +37,9 @@
                             <input type="number" name="quantity" value="1" min="1" max="{{ item.qty}}" required>
                             <button type="submit" class="waste_button">Log damage/waste</button>
                         </form>
-                        <form action="/employee/suppliers" method="GET" class="inline-form">
-                            <input type="hidden" name="requested_stock_id" value="{{ item.id}}">
+                        <form action="/order_more" method="POST" class="inline-form">
+                            <input type="hidden" name="stock_id" value="{{ item.id}}">
+                            <input type="number" name="quantity" value="1" min="1" required>
                             <button type="submit" class="order_button">Order more</button>
                         </form>
                     </div>

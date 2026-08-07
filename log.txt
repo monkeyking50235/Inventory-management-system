@@ -1,1 +1,7 @@
+Admin ordered 1x Deep Dish Dough
 Admin logged 1x Deep Dish Dough as waste
+Admin ordered 1x Bell Peppers & Onions (kg)
+Admin ordered 1x Baby Spinach (kg)
+Admin ordered 1x Sliced Mushrooms (kg)
+Admin ordered 1x Bell Peppers & Onions (kg)
+Admin logged 1x Bell Peppers & Onions (kg) as waste

@@ -87,17 +87,40 @@ def log_waste():
     employee_id = employee_data[0]
     name = employee_data[1]
     db = get_db()
-    item = query_db("SELECT name, order_price, current_quantity FROM stock WHERE stock_id = ?", (stock_id), one=True)
-    cost = quantity * item["order_price"]
+    item = query_db("SELECT name, order_price, current_quantity FROM stock WHERE stock_id = ?", (stock_id,))
+    cost = quantity * item[0]["order_price"]
     time = datetime.now().strftime("%Y-%m-%d")
     db.execute("UPDATE stock SET current_quantity = current_quantity - ? WHERE stock_id = ?", (quantity, stock_id))
     db.execute("""INSERT INTO waste(stock_id, name, quantity, cost, time, employee_id)
                VALUES (?, ?, ?, ?, ?, ?)""",
-                (stock_id, item["name"], quantity, cost, time, employee_id))
+                (stock_id, item[0]["name"], quantity, cost, time, employee_id))
     db.commit()
-    flash (f"Logged {quantity}x {item['name']} as waste.")
+    flash (f"Logged {quantity}x {item[0]['name']} as waste.")
     with open("log.txt", "a") as f:
-        f.write(f"{name} logged {quantity}x {item['name']} as waste")
+        f.write(f"{name} logged {quantity}x {item[0]['name']} as waste\n")
+
+    return redirect(request.referrer)
+
+@app.route("/order_more", methods=["POST"])
+def order_more():
+    stock_id = request.form.get("stock_id")
+    quantity = int(request.form.get("quantity", 1))
+    logemail = session["name"] 
+    employee_data = query_db("SELECT employee_id, name, store_id FROM employee WHERE email = ?", (logemail,), one=True)
+    supplier = query_db("SELECT supplier_id FROM supplier where stock_id = ?", (stock_id,), one=True)
+    name = employee_data[1]
+    store_id = employee_data[2]
+    db = get_db()
+    item = query_db("SELECT name, order_price, current_quantity FROM stock WHERE stock_id = ?", (stock_id,))
+    cost = quantity * item[0]["order_price"]
+    time = datetime.now().strftime("%Y-%m-%d")
+    db.execute("""INSERT INTO supply_order(supplier_id, store_id, stock_id, cost, status, quantity, date_ordered)
+               VALUES (?, ?, ?, ?, 'En route', ?, ?)""",
+                (supplier['supplier_id'], store_id, stock_id, cost, quantity, time))
+    db.commit()
+    flash (f"Added order for {quantity}x {item[0]['name']}.")
+    with open("log.txt", "a") as f:
+        f.write(f"{name} ordered {quantity}x {item[0]['name']}\n")
 
     return redirect(request.referrer)
 
@@ -475,10 +498,13 @@ def owner_dashboard():
             "working_status": work_status
         }
         employee_list.append(employee_info)
+    with open('log.txt', 'r', encoding='utf-8') as file:
+            logs = file.read()
+
     owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
     for item in owner:
         if item[0] == 1:
-            return render_template("owner_dashboard.html", employee_list=employee_list)
+            return render_template("owner_dashboard.html", employee_list=employee_list, logs=logs)
     return redirect(url_for("home"))
 
 @app.route("/data")
@@ -534,6 +560,7 @@ def suppliers():
             }
             for x in item_name:
                 order_info["item_name"] = x[0]
+                print(item_name)
             for y in supplier_name:
                 order_info["supplier_name"] = y[0]
             order_list.append(order_info)
