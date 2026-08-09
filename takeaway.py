@@ -1,6 +1,7 @@
 from pydoc import text
 import sqlite3
 from unicodedata import category
+import re
 from flask import Flask, g, render_template, request, redirect, url_for, session
 from flask_session import Session
 import os
@@ -97,8 +98,7 @@ def log_waste():
     db.commit()
     flash (f"Logged {quantity}x {item[0]['name']} as waste.")
     with open("log.txt", "a") as f:
-        f.write(f"{name} logged {quantity}x {item[0]['name']} as waste\n")
-
+        f.write(f"{time}: {name} logged {quantity}x {item[0]['name']} as waste\n")
     return redirect(request.referrer)
 
 @app.route("/order_more", methods=["POST"])
@@ -120,8 +120,113 @@ def order_more():
     db.commit()
     flash (f"Added order for {quantity}x {item[0]['name']}.")
     with open("log.txt", "a") as f:
-        f.write(f"{name} ordered {quantity}x {item[0]['name']}\n")
+        f.write(f"{time}: {name} ordered {quantity}x {item[0]['name']}\n")
+    return redirect(request.referrer)
 
+@app.route("/add_employee", methods=["POST"])
+def add_employee():
+    email = request.form.get("email")
+    job = request.form.get("job")
+    logemail = session["name"] 
+    user_data = query_db("SELECT user_id, name, location, phone_number FROM user WHERE email = ?", (email,), one=True)
+    if not user_data:
+        flash("There is no user with that email.")
+        return redirect(request.referrer)
+    existing_employee = query_db("SELECT employee_id FROM employee WHERE email = ?", (email,), one=True)
+    if existing_employee:
+        flash("This user is already an employee.")
+        return redirect(request.referrer)
+    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    db = get_db()
+    time = datetime.now().strftime("%Y-%m-%d")
+    db.execute("""INSERT INTO employee(name, job, email, phone_number, address, user_id)
+               VALUES (?, ?, ?, ?, ?, ?)""",
+                (user_data[1], job, email, user_data[3], user_data[2], user_data[0]))
+    db.commit()
+    flash (f"Added {user_data[1]} as an employee.")
+    with open("log.txt", "a") as f:
+        f.write(f"{time}: {employee_data[0]} added {user_data[1]} as an employee\n")
+    return redirect(request.referrer)
+
+@app.route("/remove_employee", methods=["POST"])
+def remove_employee():
+    email = request.form.get("email")
+    logemail = session["name"] 
+    ex_employee_data = query_db("SELECT name FROM employee WHERE email = ?", (email,), one=True)
+    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    if not ex_employee_data:
+        flash("There is no user with that email.")
+        return redirect(request.referrer)
+    if email == logemail:
+        flash("Owner cannot be removed.")
+        return redirect(request.referrer)
+    db = get_db()
+    time = datetime.now().strftime("%Y-%m-%d")
+    db.execute("""DELETE FROM employee WHERE email = ?""", (email,))
+    db.commit()
+    flash (f"Removed {ex_employee_data[0]} from employees.")
+    with open("log.txt", "a") as f:
+        f.write(f"{time}: {employee_data[0]} removed {ex_employee_data[0]} from employees\n")
+    return redirect(request.referrer)
+
+@app.route("/add_supplier", methods=["POST"])
+def add_supplier():
+    name = request.form.get("name")
+    address = request.form.get("address")
+    email = request.form.get("email")
+    phone_number = request.form.get("phone_number")
+    stock = request.form.get("stock")
+    delivery_time = request.form.get("delivery_time")
+    suppliers = query_db("SELECT supplier_id FROM supplier WHERE email = ?", (email,), one=True)
+    if suppliers:
+        flash("That supplier already exists.")
+        return redirect(request.referrer)
+    stock_items = [item.strip() for item in re.split(r"[,\n]+", stock) if item.strip()]
+    db = get_db()
+    for item_name in stock_items:
+        item_name_clean = item_name.strip()
+        stock_row = query_db("SELECT stock_id FROM stock WHERE name = ?", (item_name_clean,), one=True)
+        if not stock_row:
+            if not re.search(r"\(?kg\)?\s*$", item_name_clean, re.I):
+                for alt_name in (item_name_clean + " (kg)", item_name_clean + " kg"):
+                    stock_row = query_db("SELECT stock_id FROM stock WHERE name = ?", (alt_name,), one=True)
+                    if stock_row:
+                        break
+            else:
+                alt_name = re.sub(r"\s*\(?kg\)?\s*$", "", item_name_clean, flags=re.I).strip()
+                stock_row = query_db("SELECT stock_id FROM stock WHERE name = ?", (alt_name,), one=True)
+        if not stock_row:
+            flash(f"Stock item '{item_name_clean}' not found.")
+            return redirect(request.referrer)
+        db.execute(
+            "INSERT INTO supplier(name, address, email, phone_number, stock_id, delivery_time) VALUES (?, ?, ?, ?, ?, ?)",
+            (name, address, email, phone_number, stock_row[0], delivery_time)
+        )
+    db.commit()
+    time = datetime.now().strftime("%Y-%m-%d")
+    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (session.get("name"),), one=True)
+    flash(f"Added supplier {name}.")
+    with open("log.txt", "a") as f:
+        f.write(f"{time}: {employee_data[0]} added supplier {name}\n")
+    return redirect(request.referrer)
+
+@app.route("/remove_supplier", methods=["POST"])
+def remove_supplier():
+    email = request.form.get("email")
+    logemail = session["name"] 
+    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    supplier_data = query_db("SELECT name FROM supplier WHERE email = ?", (email,), one=True)
+    if not supplier_data:
+        flash("There is no supplier with that email.")
+        return redirect(request.referrer)
+    name = employee_data[0]
+    db = get_db()
+    time = datetime.now().strftime("%Y-%m-%d")
+    db.execute("""DELETE FROM supplier WHERE email = ?""", (email,))
+    db.commit()
+    flash (f"Removed {supplier_data[0]} from suppliers.")
+    with open("log.txt", "a") as f:
+        f.write(f"{time}: {name} removed {supplier_data[0]} from suppliers\n")
     return redirect(request.referrer)
 
 # Gets the users id from the database

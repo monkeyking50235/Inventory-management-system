@@ -40,27 +40,47 @@
     </tbody>
 </table>
 <form action="{{ url_for('add_employee') }}" method="post">
-    <input name="account_id">
+    <label for="email">User email</label>
+    <input type="text" name="email" placeholder="example@email.com" required>
+    <label for="job">Job title</label>
+    <input type="text" name="job" placeholder="accountant" required>
     <button type="submit">Add account as employee</button>
   </form>
 <form action="{{ url_for('remove_employee') }}" method="post">
-    <input name="account_id">
-    <button type="submit">Remove employee acount</button>
-  </form>
-<form action="{{ url_for('add_menu_item') }}" method="post">
-    <input name="account_id">
-    <button type="submit">Add item to menu</button>
-  </form>
-<form action="{{ url_for('remove_menu_item') }}" method="post">
-    <input name="account_id">
-    <button type="submit">Remove item from menu</button>
+    <label for="email">Employee email</label>
+    <input type="text" name="email" placeholder="example@email.com" required>
+    <button type="submit">Remove employee account</button>
   </form>
 <form action="{{ url_for('add_supplier') }}" method="post">
-    <input name="account_id">
+    <div>
+      <label for="name">Supplier name</label>
+      <input type="text" name="name" placeholder="Greg's Onions" required>
+    </div>
+    <div>
+      <label for="address">Supplier address</label>
+      <input type="text" name="address" placeholder="123 road street" required>
+    </div>
+    <div>
+      <label for="email">Supplier email</label>
+      <input type="text" name="email" placeholder="example@gmail.com" required>
+    </div>
+    <div>
+      <label for="phone">Supplier phone number</label>
+      <input type="text" name="phone_number" placeholder="111 111 1111" required>
+    </div>
+    <div>
+      <label for="stock">Items they stock</label>
+      <textarea name="stock" placeholder="Pizza Dough Ball, Cauliflower Crust, Deep Dish Dough" required rows="5"></textarea>
+      <br><small>Separate multiple items with commas or new lines.</small>
+    </div>
+    <div>
+      <label for="delivery_time">Average delivery time (days)</label>
+      <input type="number" name="delivery_time" placeholder="3">
+    </div>
     <button type="submit">Add supplier</button>
   </form>
 <form action="{{ url_for('remove_supplier') }}" method="post">
-    <input name="account_id">
+    <input type="text" name="email" placeholder="example@email.com" required>
     <button type="submit">Remove supplier</button>
   </form>
 

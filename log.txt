@@ -5,3 +5,10 @@ Admin ordered 1x Baby Spinach (kg)
 Admin ordered 1x Sliced Mushrooms (kg)
 Admin ordered 1x Bell Peppers & Onions (kg)
 Admin logged 1x Bell Peppers & Onions (kg) as waste
+2026-08-09: Admin added Matthew as an employee
+2026-08-09: Admin removed Blaha blast from suppliers
+2026-08-09: Admin added supplier aef
+2026-08-09: Admin added supplier aef
+2026-08-09: Admin added supplier awdd
+2026-08-09: Admin added supplier ad
+2026-08-09: Admin removed ad from suppliers
