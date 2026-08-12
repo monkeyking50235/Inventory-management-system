@@ -651,7 +651,8 @@ def owner_dashboard():
             "working_status": work_status
         }
         employee_list.append(employee_info)
-    with open('log.txt', 'r', encoding='utf-8') as file:
+
+        with open('log.txt', 'r', encoding='utf-8') as file:
             logs = file.read()
 
     owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
@@ -727,7 +728,11 @@ def received():
     supply_order_id = request.form.get("supply_order_id")
     quantity = request.form.get("quantity")
     stock_id = request.form.get("item_id")
-    current_quantity = query_db("SELECT current_quantity FROM stock WHERE stock_id = ?", (stock_id))
+    supply_order_data = query_db("SELECT stock_id FROM supply_order WHERE supply_order_id = ?", (supply_order_id,), one=True)
+    if not supply_order_data:
+            flash("There is no order with that id.")
+            return redirect(request.referrer)
+    current_quantity = query_db("SELECT current_quantity FROM stock WHERE stock_id = ?", (stock_id,))
     for item in current_quantity:
         current_quantity = item[0]
     new_quantity = int(current_quantity) + int(quantity)
@@ -736,7 +741,14 @@ def received():
     cursor.execute("DELETE FROM supply_order WHERE supply_order_id = ?", (supply_order_id,))
     cursor.execute("UPDATE stock SET current_quantity = ? WHERE stock_id = ? ", (new_quantity, stock_id,))
     db.commit()
-    return redirect(url_for("suppliers"))
+    flash (f"Removed order {supply_order_id} from supply orders.")
+    time = datetime.now().strftime("%Y-%m-%d")
+    logemail = session["name"] 
+    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    name = employee_data[0]
+    with open("log.txt", "a") as f:
+        f.write(f"{time}: {name} removed order {supply_order_id} from supply orders\n")
+    return redirect(request.referrer)
 
 if __name__ == "__main__":
     app.run(debug=True)
