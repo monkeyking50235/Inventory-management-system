@@ -12,3 +12,10 @@ Admin logged 1x Bell Peppers & Onions (kg) as waste
 2026-08-09: Admin added supplier awdd
 2026-08-09: Admin added supplier ad
 2026-08-09: Admin removed ad from suppliers
+2026-08-12: Admin added Onions as an item
+2026-08-12: Admin added svsrg as an item
+2026-08-12: Admin added segse as an item
+2026-08-12: Admin removed Admin from menu
+2026-08-12: Admin removed Onions from menu
+2026-08-12: Admin removed svsrg from menu
+2026-08-12: Admin removed segse from menu

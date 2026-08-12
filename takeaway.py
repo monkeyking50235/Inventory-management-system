@@ -169,6 +169,54 @@ def remove_employee():
         f.write(f"{time}: {employee_data[0]} removed {ex_employee_data[0]} from employees\n")
     return redirect(request.referrer)
 
+@app.route("/add_item", methods=["POST"])
+def add_item():
+    name = request.form.get("name")
+    cost = request.form.get("cost")
+    description = request.form.get("description")
+    meat = request.form.get("meat")
+    spice = request.form.get("spice")
+    category = request.form.get("category").lower()
+    image = request.form.get("image")
+    logemail = session["name"] 
+    existing_item = query_db("SELECT item_name FROM menu WHERE item_name = ?", (name,), one=True)
+    if existing_item:
+        flash("This item already exists.")
+        return redirect(request.referrer)
+    if category != "pizza" and category != "side" and category != "drink":
+        flash("The item must be a pizza, side, or drink.")
+        return redirect(request.referrer)
+    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    db = get_db()
+    time = datetime.now().strftime("%Y-%m-%d")
+    db.execute("""INSERT INTO menu(item_name, item_cost, item_description, contains_meat, contains_spice, image_url, category)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+                (name, cost, description, meat, spice, image, category))
+    db.commit()
+    flash (f"Added {name} as an item.")
+    with open("log.txt", "a") as f:
+        f.write(f"{time}: {employee_data[0]} added {name} as an item\n")
+    return redirect(request.referrer)
+
+@app.route("/remove_item", methods=["POST"])
+def remove_item():
+    name = request.form.get("name")
+    logemail = session["name"] 
+    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    item_data = query_db("SELECT item_name FROM menu WHERE item_name = ?", (name,), one=True)
+    if not item_data:
+        flash("There is no supplier with that email.")
+        return redirect(request.referrer)
+    employee_name = employee_data[0]
+    db = get_db()
+    time = datetime.now().strftime("%Y-%m-%d")
+    db.execute("""DELETE FROM menu WHERE item_name = ?""", (name,))
+    db.commit()
+    flash (f"Removed {name} from menu.")
+    with open("log.txt", "a") as f:
+        f.write(f"{time}: {employee_name} removed {name} from menu\n")
+    return redirect(request.referrer)
+
 @app.route("/add_supplier", methods=["POST"])
 def add_supplier():
     name = request.form.get("name")
