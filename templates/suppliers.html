@@ -2,63 +2,59 @@
 {% block body %}
 <br>
 <br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<table id="order_table">
-    <thead>
-        <tr>
-            <th>Item name</th>
-            <th>Supplier</th>
-            <th>Quantity</th>
-            <th>Expected delivery date</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in order_list %}
-            <tr>
-                <td>{{ item.item_name }}</td>
-                <td>{{ item.supplier_name }}</td>
-                <td>{{ item.quantity }}</td>
-                <td>{{ item.email }}</td>
-                <td>{{ item.status }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-        {% for item in order_list %}
-                    <form action="{{ url_for('received') }}" method="POST">
-                    <input type="hidden" name="supply_order_id" value="{{ item.supply_order_id}}">
-                    <input type="hidden" name="item_id" value="{{ item.item_id}}">
-                    <input type="hidden" name="quantity" value="{{ item.quantity}}">
-                    <button type="submit" class="suppliers_button">Mark as received</button>
-        {% endfor %}
-<table id="supplier_table">
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Email</th>
-            <th>Phone number</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in supplier_list %}
-            <tr>
-                <td>{{ item.name }}</td>
-                <td>{{ item.email }}</td>
-                <td>{{ item.phone }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-
+<div id="supplier_tables">
+    <div class="table_container_suppliers">
+        <table >
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone number</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in supplier_list %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.email }}</td>
+                        <td>{{ item.phone }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    <div class="table_container_suppliers">
+        <table>
+            <thead>
+                <tr>
+                    <th>Item name</th>
+                    <th>Supplier</th>
+                    <th>Quantity</th>
+                    <th>Expected delivery date</th>
+                    <th>Status</th>
+                    <th>Mark as received</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in order_list %}
+                    <tr>
+                        <td>{{ item.item_name }}</td>
+                        <td>{{ item.supplier_name }}</td>
+                        <td>{{ item.quantity }}</td>
+                        <td>{{ item.arrival }}</td>
+                        <td>{{ item.status }}</td>
+                        <td>
+                            <form action="{{ url_for('received') }}" method="POST">
+                                <input type="hidden" name="supply_order_id" value="{{ item.supply_order_id }}">
+                                <input type="hidden" name="item_id" value="{{ item.item_id }}">
+                                <input type="hidden" name="quantity" value="{{ item.quantity }}">
+                                <button type="submit" class="suppliers_button">Mark as received</button>
+                            </form>
+                        </td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

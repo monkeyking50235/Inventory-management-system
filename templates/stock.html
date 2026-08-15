@@ -2,54 +2,54 @@
 {% block body %}
 
 <br> <br>
-
-<table id="stock_table">
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Quantity in stock</th>
-            <th>Order price</th>
-            <th>Time till expiry</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in stock_list %}
+<div id="stock_table">
+    <table>
+        <thead>
             <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.qty }}</td>
-                <td>${{ "%.2f"|format(item.price) }}</td>
-                <td><span class="status_bridge {% if item.expiry_length == 'expired' %}alert-accent{% elif item.expiry_length.category == 'warning' %}warning-accent{% else %}safe-accent{% endif %}">
-                    {% if item.expiry_length == 'expired' %}
-                        Expired
-                    {% else %}
-                        {{ item.expiry_length.text }}
-                    {% endif %}
-                </span></td>
-
+                <th>ID</th>
+                <th>Name</th>
+                <th>Quantity in stock</th>
+                <th>Order price</th>
+                <th>Time till expiry</th>
             </tr>
-            <tr class="table_buttons">
-                <td colspan="5">
-                    <div class="stock_buttons">
-                        <form action="/waste" method="POST" class="inline-form">
-                            <input type="hidden" name="stock_id" value="{{ item.id}}">
-                            <input type="number" name="quantity" value="1" min="1" max="{{ item.qty}}" required>
-                            <button type="submit" class="waste_button">Log damage/waste</button>
-                        </form>
-                        <form action="/order_more" method="POST" class="inline-form">
-                            <input type="hidden" name="stock_id" value="{{ item.id}}">
-                            <input type="number" name="quantity" value="1" min="1" required>
-                            <button type="submit" class="order_button">Order more</button>
-                        </form>
+        </thead>
+        <tbody>
+            {% for item in stock_list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.qty }}</td>
+                    <td>${{ "%.2f"|format(item.price) }}</td>
+                    <td><span class="status_bridge {% if item.expiry_length == 'expired' %}alert-accent{% elif item.expiry_length.category == 'warning' %}warning-accent{% else %}safe-accent{% endif %}">
+                        {% if item.expiry_length == 'expired' %}
+                            Expired
+                        {% else %}
+                            {{ item.expiry_length.text }}
+                        {% endif %}
+                    </span></td>
+                    <td>
+                        <div class="stock_buttons">
+                            <form action="/waste" method="POST" class="inline-form">
+                                <input type="hidden" name="stock_id" value="{{ item.id}}">
+                                <input type="number" name="quantity" value="1" min="1" max="{{ item.qty}}" required>
+                                <button type="submit" class="waste_button">Log damage/waste</button>
+                            </form>
+                    </td>
                     </div>
-                </td>
-            </tr>
-        {% endfor %}
-    </tbody>
-    
-</table>
-
+                    <div class="stock_buttons">
+                    <td>
+                            <form action="/order_more" method="POST" class="inline-form">
+                                <input type="hidden" name="stock_id" value="{{ item.id}}">
+                                <input type="number" name="quantity" value="1" min="1" required>
+                                <button type="submit" class="order_button">Order more</button>
+                            </form>
+                        </div>
+                    </td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
 
 
 {% endblock %}

@@ -107,20 +107,24 @@ def order_more():
     quantity = int(request.form.get("quantity", 1))
     logemail = session["name"] 
     employee_data = query_db("SELECT employee_id, name, store_id FROM employee WHERE email = ?", (logemail,), one=True)
-    supplier = query_db("SELECT supplier_id FROM supplier where stock_id = ?", (stock_id,), one=True)
+    supplier = query_db("SELECT supplier_id, delivery_time FROM supplier WHERE stock_id = ?", (stock_id,), one=True)
+    if not supplier:
+        flash("No supplier is assigned to this item.")
+        return redirect(request.referrer)
     name = employee_data[1]
     store_id = employee_data[2]
     db = get_db()
     item = query_db("SELECT name, order_price, current_quantity FROM stock WHERE stock_id = ?", (stock_id,))
     cost = quantity * item[0]["order_price"]
-    time = datetime.now().strftime("%Y-%m-%d")
-    db.execute("""INSERT INTO supply_order(supplier_id, store_id, stock_id, cost, status, quantity, date_ordered)
-               VALUES (?, ?, ?, ?, 'En route', ?, ?)""",
-                (supplier['supplier_id'], store_id, stock_id, cost, quantity, time))
+    date_ordered = datetime.now().strftime("%Y-%m-%d")
+    expected_arrival = (datetime.strptime(date_ordered, "%Y-%m-%d") + timedelta(days=int(supplier["delivery_time"]))).strftime("%Y-%m-%d")
+    db.execute("""INSERT INTO supply_order(supplier_id, store_id, stock_id, cost, status, quantity, date_ordered, expected_arrival)
+               VALUES (?, ?, ?, ?, 'En route', ?, ?, ?)""",
+                (supplier['supplier_id'], store_id, stock_id, cost, quantity, date_ordered, expected_arrival))
     db.commit()
     flash (f"Added order for {quantity}x {item[0]['name']}.")
     with open("log.txt", "a") as f:
-        f.write(f"{time}: {name} ordered {quantity}x {item[0]['name']}\n")
+        f.write(f"{date_ordered}: {name} ordered {quantity}x {item[0]['name']}\n")
     return redirect(request.referrer)
 
 @app.route("/add_employee", methods=["POST"])
@@ -711,10 +715,10 @@ def suppliers():
                 "cost": item[4],
                 "status": item[5],
                 "quantity": item[6],
+                "arrival": item[8] if len(item) > 8 and item[8] is not None else "N/A",
             }
             for x in item_name:
                 order_info["item_name"] = x[0]
-                print(item_name)
             for y in supplier_name:
                 order_info["supplier_name"] = y[0]
             order_list.append(order_info)

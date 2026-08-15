@@ -26,3 +26,9 @@ Admin logged 1x Bell Peppers & Onions (kg) as waste
 2026-08-13: Admin removed order 9 from supply orders
 2026-08-13: Admin removed order 10 from supply orders
 2026-08-13: Admin removed order 11 from supply orders
+2026-08-15: Admin ordered 15x Pizza Dough Ball
+2026-08-15: Admin ordered 12x Deep Dish Dough
+2026-08-15: Admin ordered 22x Ground Beef (kg)
+2026-08-15: Admin ordered 14x Bell Peppers & Onions (kg)
+2026-08-15: Admin ordered 26x Shaved Beef (kg)
+2026-08-15: Admin ordered 14x Sliced Mushrooms (kg)
