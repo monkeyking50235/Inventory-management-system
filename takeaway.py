@@ -88,17 +88,21 @@ def log_waste():
     employee_id = employee_data[0]
     name = employee_data[1]
     db = get_db()
-    item = query_db("SELECT name, order_price, current_quantity FROM stock WHERE stock_id = ?", (stock_id,))
-    cost = quantity * item[0]["order_price"]
+    item = query_db("SELECT name, order_price FROM stock WHERE stock_id = ?", (stock_id,), one=True)
+    available_quantity = get_stock_quantity(stock_id)
+    if not item or quantity > available_quantity:
+        flash("There is not enough stock available.")
+        return redirect(request.referrer)
+    cost = quantity * item["order_price"]
     time = datetime.now().strftime("%Y-%m-%d")
-    db.execute("UPDATE stock SET current_quantity = current_quantity - ? WHERE stock_id = ?", (quantity, stock_id))
+    consume_stock_quantity(stock_id, quantity)
     db.execute("""INSERT INTO waste(stock_id, name, quantity, cost, time, employee_id)
                VALUES (?, ?, ?, ?, ?, ?)""",
-                (stock_id, item[0]["name"], quantity, cost, time, employee_id))
+                (stock_id, item["name"], quantity, cost, time, employee_id))
     db.commit()
-    flash (f"Logged {quantity}x {item[0]['name']} as waste.")
+    flash (f"Logged {quantity}x {item['name']} as waste.")
     with open("log.txt", "a") as f:
-        f.write(f"{time}: {name} logged {quantity}x {item[0]['name']} as waste\n")
+        f.write(f"{time}: {name} logged {quantity}x {item['name']} as waste\n")
     return redirect(request.referrer)
 
 @app.route("/order_more", methods=["POST"])
@@ -114,17 +118,16 @@ def order_more():
     name = employee_data[1]
     store_id = employee_data[2]
     db = get_db()
-    item = query_db("SELECT name, order_price, current_quantity FROM stock WHERE stock_id = ?", (stock_id,))
-    cost = quantity * item[0]["order_price"]
+    item = query_db("SELECT name, order_price FROM stock WHERE stock_id = ?", (stock_id,), one=True)
+    cost = quantity * item["order_price"]
     date_ordered = datetime.now().strftime("%Y-%m-%d")
-    expected_arrival = (datetime.strptime(date_ordered, "%Y-%m-%d") + timedelta(days=int(supplier["delivery_time"]))).strftime("%Y-%m-%d")
-    db.execute("""INSERT INTO supply_order(supplier_id, store_id, stock_id, cost, status, quantity, date_ordered, expected_arrival)
-               VALUES (?, ?, ?, ?, 'En route', ?, ?, ?)""",
-                (supplier['supplier_id'], store_id, stock_id, cost, quantity, date_ordered, expected_arrival))
+    db.execute("""INSERT INTO supply_order(supplier_id, store_id, stock_id, cost, status, quantity, date_ordered)
+               VALUES (?, ?, ?, ?, 'En route', ?, ?)""",
+                (supplier['supplier_id'], store_id, stock_id, cost, quantity, date_ordered))
     db.commit()
-    flash (f"Added order for {quantity}x {item[0]['name']}.")
+    flash (f"Added order for {quantity}x {item['name']}.")
     with open("log.txt", "a") as f:
-        f.write(f"{date_ordered}: {name} ordered {quantity}x {item[0]['name']}\n")
+        f.write(f"{date_ordered}: {name} ordered {quantity}x {item['name']}\n")
     return redirect(request.referrer)
 
 @app.route("/add_employee", methods=["POST"])
@@ -289,10 +292,37 @@ def get_user_id():
     return row["user_id"] if row else None
 
 def get_total_price():
-    total_value = query_db("SELECT SUM(order_price * current_quantity) FROM stock")
-    if total_value and total_value[0][0] is not None:
-        return round(total_value[0][0], 2)
-    return 0.00
+    row = query_db("""
+        SELECT COALESCE(SUM(stock.order_price * stock_quantity.quantity), 0)
+        FROM stock
+        JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
+    """, one=True)
+    return round(row[0], 2)
+
+def get_stock_quantity(stock_id):
+    row = query_db(
+        "SELECT COALESCE(SUM(quantity), 0) AS quantity FROM stock_quantity WHERE stock_id = ?",
+        (stock_id,), one=True
+    )
+    return row["quantity"]
+
+def consume_stock_quantity(stock_id, quantity):
+    batches = query_db(
+        "SELECT stock_quantity_id, quantity FROM stock_quantity "
+        "WHERE stock_id = ? AND quantity > 0 ORDER BY arrival_date, stock_quantity_id",
+        (stock_id,)
+    )
+    remaining = quantity
+    db = get_db()
+    for batch in batches:
+        used = min(remaining, batch["quantity"])
+        db.execute(
+            "UPDATE stock_quantity SET quantity = quantity - ? WHERE stock_quantity_id = ?",
+            (used, batch["stock_quantity_id"])
+        )
+        remaining -= used
+        if remaining == 0:
+            break
 
 """ Selects the info from the order table for the current user, ensuring its 
 a current order. If no order exists then it makes one"""
@@ -324,25 +354,26 @@ def total():
     total = round(total, 2)
     return total if total else 0
 
-def expiry(arrival_date, experation_time):
+def expiry(arrival_date, expiration_time, batch_quantity):
     current_time = datetime.now()
-    if arrival_date is None or arrival_date == "":
-        arrival_date = datetime.now().strftime('%Y-%m-%d')
-        obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d')
-    else: 
-        obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d')
-    expire_date = obtained_date + timedelta(days=experation_time)
+    if not arrival_date or batch_quantity <= 0:
+        return {"text": "No stock", "category": "empty"}
+    obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d')
+    expire_date = obtained_date + timedelta(days=int(expiration_time))
     if current_time >= expire_date:
-        return "expired"
+        return {
+            "text": f"Expired ({batch_quantity} in batch)",
+            "category": "expired"
+        }
     else: 
         days_left = (expire_date - current_time).days
-        life_percentage = (days_left/experation_time)*100
+        life_percentage = (days_left / int(expiration_time)) * 100
         if life_percentage <= 20: 
-            return {"text": f"Expires in {round(days_left, 1)} days",
-            category: "warning"}
+            return {"text": f"Expires in {round(days_left, 1)} days ({batch_quantity} in batch)",
+            "category": "warning"}
         else:
-            return {"text": f"Expires in {round(days_left, 1)} days",
-            category: "safe"}
+            return {"text": f"Expires in {round(days_left, 1)} days ({batch_quantity} in batch)",
+            "category": "safe"}
 @app.route("/status", methods=['POST'])        
 def status():
     db = get_db()
@@ -614,19 +645,33 @@ def stock():
         return redirect(url_for("home"))
     stock_list = []
     total_value = get_total_price()
-    info = query_db("SELECT * FROM stock ORDER BY expiration_time")
+    info = query_db("""
+        SELECT stock.stock_id, stock.order_price, stock.name, stock.expiration_time,
+               COALESCE(SUM(stock_quantity.quantity), 0) AS stock_quantity
+        FROM stock
+        LEFT JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
+        GROUP BY stock.stock_id
+        ORDER BY stock_quantity DESC, stock.stock_id
+    """)
     for item in info:
-        expiry_info = expiry(item[5], item[4])
-        if category == "warning":
-            alert = "true"
-        else: alert = "false"
+        quantity = item["stock_quantity"]
+        batch = query_db(
+            "SELECT arrival_date, SUM(quantity) AS batch_quantity "
+            "FROM stock_quantity WHERE stock_id = ? AND quantity > 0 "
+            "GROUP BY arrival_date ORDER BY arrival_date LIMIT 1",
+            (item["stock_id"],), one=True
+        )
+        expiry_info = expiry(
+            batch["arrival_date"] if batch else None,
+            item["expiration_time"],
+            batch["batch_quantity"] if batch else 0
+        )
         stock_info = {
-            "id": item[0],
-            "name": item[3],
-            "qty": item[2],
-            "price": item[1],
+            "id": item["stock_id"],
+            "name": item["name"],
+            "qty": quantity,
+            "price": item["order_price"],
             "expiry_length": expiry_info,
-            "alert": alert
         }
         stock_list.append(stock_info)
     return render_template("stock.html", stock_list=stock_list, total_value=total_value)
@@ -675,7 +720,7 @@ def data():
         cost = cost + sale[0]
     average = cost/len(sales)
     waste_list = []
-    info = query_db("SELECT name, sum(quantity) as total, cost FROM waste WHERE time >= datetime('now', '-30 days') GROUP BY name ORDER BY total DESC")
+    info = query_db("SELECT name, SUM(quantity) AS total, SUM(cost) AS cost FROM waste WHERE time >= datetime('now', '-30 days') GROUP BY name ORDER BY total DESC")
     for item in info:
         waste_info = {
             "name": item[0],
@@ -715,7 +760,7 @@ def suppliers():
                 "cost": item[4],
                 "status": item[5],
                 "quantity": item[6],
-                "arrival": item[8] if len(item) > 8 and item[8] is not None else "N/A",
+                "arrival": item[7] if item[7] is not None else "N/A",
             }
             for x in item_name:
                 order_info["item_name"] = x[0]
@@ -731,19 +776,18 @@ def suppliers():
 def received():
     supply_order_id = request.form.get("supply_order_id")
     quantity = request.form.get("quantity")
-    stock_id = request.form.get("item_id")
     supply_order_data = query_db("SELECT stock_id FROM supply_order WHERE supply_order_id = ?", (supply_order_id,), one=True)
     if not supply_order_data:
             flash("There is no order with that id.")
             return redirect(request.referrer)
-    current_quantity = query_db("SELECT current_quantity FROM stock WHERE stock_id = ?", (stock_id,))
-    for item in current_quantity:
-        current_quantity = item[0]
-    new_quantity = int(current_quantity) + int(quantity)
+    stock_id = supply_order_data["stock_id"]
     db = get_db()
     cursor = db.cursor()
     cursor.execute("DELETE FROM supply_order WHERE supply_order_id = ?", (supply_order_id,))
-    cursor.execute("UPDATE stock SET current_quantity = ? WHERE stock_id = ? ", (new_quantity, stock_id,))
+    cursor.execute(
+        "INSERT INTO stock_quantity (stock_id, quantity, arrival_date) VALUES (?, ?, ?)",
+        (stock_id, int(quantity), datetime.now().strftime("%Y-%m-%d"))
+    )
     db.commit()
     flash (f"Removed order {supply_order_id} from supply orders.")
     time = datetime.now().strftime("%Y-%m-%d")

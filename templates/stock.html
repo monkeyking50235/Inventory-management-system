@@ -6,7 +6,6 @@
     <table>
         <thead>
             <tr>
-                <th>ID</th>
                 <th>Name</th>
                 <th>Quantity in stock</th>
                 <th>Order price</th>
@@ -16,16 +15,11 @@
         <tbody>
             {% for item in stock_list %}
                 <tr>
-                    <td>{{ item.id }}</td>
                     <td>{{ item.name }}</td>
                     <td>{{ item.qty }}</td>
                     <td>${{ "%.2f"|format(item.price) }}</td>
-                    <td><span class="status_bridge {% if item.expiry_length == 'expired' %}alert-accent{% elif item.expiry_length.category == 'warning' %}warning-accent{% else %}safe-accent{% endif %}">
-                        {% if item.expiry_length == 'expired' %}
-                            Expired
-                        {% else %}
-                            {{ item.expiry_length.text }}
-                        {% endif %}
+                    <td><span class="status_bridge {% if item.expiry_length.category == 'expired' %}alert-accent{% elif item.expiry_length.category in ['warning', 'empty'] %}warning-accent{% else %}safe-accent{% endif %}">
+                        {{ item.expiry_length.text }}
                     </span></td>
                     <td>
                         <div class="stock_buttons">

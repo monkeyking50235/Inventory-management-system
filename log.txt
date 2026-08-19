@@ -32,3 +32,19 @@ Admin logged 1x Bell Peppers & Onions (kg) as waste
 2026-08-15: Admin ordered 14x Bell Peppers & Onions (kg)
 2026-08-15: Admin ordered 26x Shaved Beef (kg)
 2026-08-15: Admin ordered 14x Sliced Mushrooms (kg)
+2026-08-19: Admin ordered 1x BBQ Sauce (kg)
+2026-08-19: Admin ordered 1x BBQ Sauce (kg)
+2026-08-19: Admin ordered 1x Pizza Dough Ball
+2026-08-19: Admin ordered 1x Pizza Dough Ball
+2026-08-19: Admin removed order 12 from supply orders
+2026-08-19: Admin removed order 13 from supply orders
+2026-08-19: Admin removed order 14 from supply orders
+2026-08-19: Admin removed order 15 from supply orders
+2026-08-19: Admin removed order 16 from supply orders
+2026-08-19: Admin removed order 17 from supply orders
+2026-08-19: Admin removed order 18 from supply orders
+2026-08-19: Admin removed order 19 from supply orders
+2026-08-19: Admin removed order 20 from supply orders
+2026-08-19: Admin removed order 21 from supply orders
+2026-08-19: Admin logged 1x Shaved Beef (kg) as waste
+2026-08-19: Admin logged 1x Shaved Beef (kg) as waste
