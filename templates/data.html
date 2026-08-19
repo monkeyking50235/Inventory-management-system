@@ -4,25 +4,87 @@
 <br>
 <br>
 
-<table>
-    <thead>
-        <tr>
-            <th>Name</th>
-            <th>Quantity Wasted</th>
-            <th>Cost</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in waste_list %}
-            <tr>
-                <td>{{ item.name }}</td>
-                <td>{{ item.total }}</td>
-                <td>{{ item.cost }}</td>
-            </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<br>
-Total Sales: ${{cost}}<br>
-Average order cost: ${{average}}
+<div id="data_summary">
+    <section>
+        <h2>Total Sales</h2>
+        <p>${{ cost }}</p>
+    </section>
+
+    <section>
+        <h2>Average Order Revenue</h2>
+        <p>${{ average }}</p>
+    </section>
+
+    <section>
+        <h2>Items expiring today</h2>
+        <div class="data_summary_list">
+            {% for item in expiring_today %}
+                <p>{{ item.name }}: {{ item.quantity }}</p>
+            {% else %}
+                <p>No items expiring today.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section>
+        <h2>Current active staff</h2>
+        <div class="data_summary_list">
+            {% for employee in active_staff %}
+                <p>{{ employee.name }}{% if employee.job %} - {{ employee.job }}{% endif %}</p>
+            {% else %}
+                <p>No staff are currently active.</p>
+            {% endfor %}
+        </div>
+    </section>
+</div>
+
+<div id="data_tables">
+    <div class="table_container_suppliers">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Quantity Wasted</th>
+                    <th>Cost</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in waste_list %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.total }}</td>
+                        <td>{{ item.cost }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="3">No items wasted recently.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="table_container_suppliers">
+        <table>
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>Quantity in Stock</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for item in low_stock %}
+                    <tr>
+                        <td>{{ item.name }}</td>
+                        <td>{{ item.quantity }}</td>
+                    </tr>
+                {% else %}
+                    <tr>
+                        <td colspan="2">No items are low on stock.</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
 {% endblock %}

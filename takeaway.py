@@ -618,7 +618,17 @@ def edit_details():
         db.commit()
         session["display_name"] = name
         return redirect(url_for("details"))
-    
+
+@app.route("/delete_logs", methods=["POST"])
+def delete_logs():
+    logemail = session["name"] 
+    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    name = employee_data[0]
+    time = datetime.now().strftime("%Y-%m-%d")
+    with open("log.txt", "w", encoding="utf-8") as f:
+        f.write(f"{time}: {name} cleared the logs\n")
+    return redirect(request.referrer)
+
 # Adds the checkout page with the cart items and cost
 @app.route("/checkout")
 def checkout():
@@ -678,8 +688,13 @@ def stock():
 
 @app.route("/owner_dashboard")
 def owner_dashboard():
+    if "name" not in session:
+        return redirect(url_for("profile"))
     employee_list = []
     info = query_db("SELECT * FROM employee")
+    with open("log.txt", "r", encoding="utf-8") as file:
+        logs = file.read()
+
     for item in info:
         if item[8] == 1:
             work_status = "Working"
@@ -701,9 +716,6 @@ def owner_dashboard():
         }
         employee_list.append(employee_info)
 
-        with open('log.txt', 'r', encoding='utf-8') as file:
-            logs = file.read()
-
     owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
     for item in owner:
         if item[0] == 1:
@@ -718,7 +730,7 @@ def data():
     sales = query_db("SELECT cost From order_entry Where cost IS NOT NULL")
     for sale in sales:
         cost = cost + sale[0]
-    average = cost/len(sales)
+    average = cost / len(sales) if sales else 0
     waste_list = []
     info = query_db("SELECT name, SUM(quantity) AS total, SUM(cost) AS cost FROM waste WHERE time >= datetime('now', '-30 days') GROUP BY name ORDER BY total DESC")
     for item in info:
@@ -728,8 +740,30 @@ def data():
             "cost": item[2],
         }
         waste_list.append(waste_info)
-    
-    return render_template("data.html", cost=cost, average=round(average, 2), waste_list=waste_list)
+
+    expiring_today = query_db("""
+        SELECT stock.name, SUM(stock_quantity.quantity) AS quantity
+        FROM stock
+        JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
+        WHERE stock_quantity.quantity > 0
+        AND date(stock_quantity.arrival_date, '+' || stock.expiration_time || ' days') = date('now')
+        GROUP BY stock.stock_id, stock.name
+        ORDER BY stock.name""")
+
+    active_staff = query_db("SELECT name, job FROM employee WHERE working = 1 ORDER BY name")
+
+    low_stock = query_db("""
+        SELECT stock.name, COALESCE(SUM(stock_quantity.quantity), 0) AS quantity
+        FROM stock
+        LEFT JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
+        GROUP BY stock.stock_id, stock.name
+        HAVING COALESCE(SUM(stock_quantity.quantity), 0) <= 5
+        ORDER BY quantity, stock.name""")
+
+    return render_template(
+        "data.html", cost=cost, average=round(average, 2), waste_list=waste_list,
+        expiring_today=expiring_today, active_staff=active_staff,
+        low_stock=low_stock,)
 
 @app.route("/suppliers")
 def suppliers():

@@ -1,103 +1,106 @@
 {% extends "layout.html" %}
 {% block body %}
-<!--promoting accounts on left, managing on right. file logs, adding items to menu removing items, suppliers, etc. Seems like coding so I'll do it later--->
-
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-<table>
-    <thead>
-        <tr>
-            <th>ID</th>
-            <th>Name</th>
-            <th>Job</th>
-            <th>Email</th>
-            <th>Phone number</th>
-            <th>Address</th>
-            <th>Store</th>
-            <th>Status</th>
-        </tr>
-    </thead>
-    <tbody>
-        {% for item in employee_list %}
+<br><br>
+<div id="dashboard">
+  <div id="buttons_left">
+    <table>
+        <thead>
             <tr>
-                <td>{{ item.id }}</td>
-                <td>{{ item.name }}</td>
-                <td>{{ item.job }}</td>
-                <td>{{ item.email }}</td>
-                <td>{{ item.phone_number }}</td>
-                <td>{{ item.address }}</td>
-                <td>{{ item.store }}</td>
-                <td>{{ item.working_status }}</td>
+                <th>ID</th>
+                <th>Name</th>
+                <th>Job</th>
+                <th>Email</th>
+                <th>Phone number</th>
+                <th>Address</th>
+                <th>Store</th>
+                <th>Status</th>
             </tr>
-        {% endfor %}
-    </tbody>
-</table>
-<form action="{{ url_for('add_employee') }}" method="post">
-    <label for="email">User email</label>
-    <input type="text" name="email" placeholder="example@email.com" required>
-    <label for="job">Job title</label>
-    <input type="text" name="job" placeholder="accountant" required>
-    <button type="submit">Add account as employee</button>
-  </form>
-<form action="{{ url_for('add_item') }}" method="post">
-      <label for="name">Item name</label>
-      <input type="text" name="name" placeholder="Onions" required>
-      <label for="cost">Item Cost</label>
-      <input type="number" name="cost" min="0" step="0.01" placeholder="5.99" required>
-      <label for="description">Short item description</label>
-      <input type="text" name="description" placeholder="Short paragraph" required>
-      <label for="meat">Does it contain meat(1 = yes 0 = no)</label>
-      <input type="number" name="meat" min="0" max="1" placeholder="0" required>
-      <label for="spice">Is it spicy(1 = yes 0 = no)</label>
-      <input type="number" name="spice" min="0" max="1" placeholder="1" required>
-      <label for="image">Provide an image url</label>
-      <input type="text" name="image" placeholder="https://www.blahblah/" required>
-      <label for="category">Is it a pizza, side, or drink</label>
-      <input type="text" name="category" placeholder="Pizza" required>
-    <button type="submit">Add item</button>
-  </form>
-<form action="{{ url_for('remove_item') }}" method="post">
-    <label for="name">Item name</label>
-    <input type="text" name="name" placeholder="Onions" required>
-    <button type="submit">Remove item</button>
-  </form>
-<form action="{{ url_for('remove_employee') }}" method="post">
-    <label for="email">Employee email</label>
-    <input type="text" name="email" placeholder="example@email.com" required>
-    <button type="submit">Remove employee account</button>
-  </form>
-<form action="{{ url_for('add_supplier') }}" method="post">
-      <label for="name">Supplier name</label>
-      <input type="text" name="name" placeholder="Greg's Onions" required>
-      <label for="address">Supplier address</label>
-      <input type="text" name="address" placeholder="123 road street" required>
-      <label for="email">Supplier email</label>
-      <input type="text" name="email" placeholder="example@gmail.com" required>
-      <label for="phone">Supplier phone number</label>
-      <input type="text" name="phone_number" placeholder="111 111 1111" required>
-      <label for="stock">Items they stock</label>
-      <small>Separate multiple items with commas or new lines.</small><br>
-      <textarea name="stock" placeholder="Pizza Dough Ball, Cauliflower Crust, Deep Dish Dough" required rows="5"></textarea>
-    <div>
-      <label for="delivery_time">Average delivery time (days)</label>
-      <input type="number" name="delivery_time" placeholder="3">
-    <button type="submit">Add supplier</button>
-  </form>
-<form action="{{ url_for('remove_supplier') }}" method="post">
-    <input type="text" name="email" placeholder="example@email.com" required>
-    <button type="submit">Remove supplier</button>
-  </form>
+        </thead>
+        <tbody>
+            {% for item in employee_list %}
+                <tr>
+                    <td>{{ item.id }}</td>
+                    <td>{{ item.name }}</td>
+                    <td>{{ item.job }}</td>
+                    <td>{{ item.email }}</td>
+                    <td>{{ item.phone_number }}</td>
+                    <td>{{ item.address }}</td>
+                    <td>{{ item.store }}</td>
+                    <td>{{ item.working_status }}</td>
+                </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+    <div class="dashboard_form_pair">
+      <form action="{{ url_for('add_employee') }}" method="post">
+        <label for="email">User email</label>
+        <input type="text" name="email" placeholder="example@email.com" required>
+        <label for="job">Job title</label>
+        <input type="text" name="job" placeholder="accountant" required>
+        <button type="submit">Add account as employee</button>
+      </form>
+      <form action="{{ url_for('remove_employee') }}" method="post">
+        <label for="remove-employee-email">Employee email</label>
+        <input id="remove-employee-email" type="text" name="email" placeholder="example@email.com" required>
+        <button type="submit">Remove employee account</button>
+      </form>
+    </div>
+    <div class="dashboard_form_pair">
+      <form action="{{ url_for('add_item') }}" method="post">
+          <label for="name">Item name</label>
+          <input type="text" name="name" placeholder="Onions" required>
+          <label for="cost">Item Cost</label>
+          <input type="number" name="cost" min="0" step="0.01" placeholder="5.99" required>
+          <label for="description">Short item description</label>
+          <input type="text" name="description" placeholder="Short paragraph" required>
+          <label for="meat">Does it contain meat(1 = yes 0 = no)</label>
+          <input type="number" name="meat" min="0" max="1" placeholder="0" required>
+          <label for="spice">Is it spicy(1 = yes 0 = no)</label>
+          <input type="number" name="spice" min="0" max="1" placeholder="1" required>
+          <label for="image">Provide an image url</label>
+          <input type="text" name="image" placeholder="https://www.blahblah/" required>
+          <label for="category">Is it a pizza, side, or drink</label>
+          <input type="text" name="category" placeholder="Pizza" required>
+        <button type="submit">Add item</button>
+      </form>
+      <form action="{{ url_for('remove_item') }}" method="post">
+        <label for="name">Item name</label>
+        <input type="text" name="name" placeholder="Onions" required>
+        <button type="submit">Remove item</button>
+      </form>
+    </div>
+    <div class="dashboard_form_pair">
+      <form action="{{ url_for('add_supplier') }}" method="post">
+          <label for="name">Supplier name</label>
+          <input type="text" name="name" placeholder="Greg's Onions" required>
+          <label for="address">Supplier address</label>
+          <input type="text" name="address" placeholder="123 road street" required>
+          <label for="email">Supplier email</label>
+          <input type="text" name="email" placeholder="example@gmail.com" required>
+          <label for="phone">Supplier phone number</label>
+          <input type="text" name="phone_number" placeholder="111 111 1111" required>
+          <label for="stock">Items they stock</label>
+          <small>Separate multiple items with commas or new lines.</small><br>
+          <textarea name="stock" placeholder="Pizza Dough Ball, Cauliflower Crust, Deep Dish Dough" required rows="5"></textarea>
+        <div>
+          <label for="delivery_time">Average delivery time (days)</label>
+          <input type="number" name="delivery_time" placeholder="3">
+        <button type="submit">Add supplier</button>
+        </div>
+      </form>
+      <form action="{{ url_for('remove_supplier') }}" method="post">
+        <input type="text" name="email" placeholder="example@email.com" required>
+        <button type="submit">Remove supplier</button>
+      </form>
+    </div>
+  </div>
 
-  <h4>Logs:</h4>
-  <body id="log_right">
-      <pre>{{logs}}</pre>
-  </body>
-
+  <div id="logs_right">
+    <h4>Logs:</h4>
+    <pre>{{ logs or "No activity has been logged yet." }}</pre>
+      <form action="{{ url_for('delete_logs') }}" method="post">
+      <button type="submit">Delete logs</button>
+      </form>
+  </div>
+</div>
 {% endblock %}

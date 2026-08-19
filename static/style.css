@@ -1028,6 +1028,32 @@ thead th {
   width: 100%;
 }
 
+#data_tables {
+    display: flex;
+    gap: 1.5rem;
+    width: 100%;
+}
+
+#data_summary {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 1.5rem;
+    width: 100%;
+    margin-bottom: 1.5rem;
+}
+
+#data_summary section {
+    margin: 0;
+}
+
+#data_summary h2 {
+    margin-top: 0;
+}
+
+.data_summary_list p {
+    margin: 0 0 8px;
+}
+
 table {
   width: 100%;
   table-layout: fixed;
@@ -1042,10 +1068,139 @@ table {
   border-radius: 8px;
 }
 
+#dashboard {
+    display: flex;
+    flex-direction: row;
+    gap: 24px;
+    align-items: start;
+    width: calc(100% - 40px);
+    max-width: none;
+    margin: 24px auto;
+    box-sizing: border-box;
+}
+
+.flex-wrapper,
+.content,
+.content main {
+    width: 100%;
+}
+
+#buttons_left,
+#logs_right {
+    min-width: 0;
+    flex: 0 0 calc(50% - 12px);
+    width: calc(50% - 12px);
+    box-sizing: border-box;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    border-radius: 0;
+}
+
+#logs_right {
+    min-height: 320px;
+}
+
+#buttons_left {
+    max-height: calc(100vh - 110px);
+    overflow: auto;
+}
+
+#buttons_left form {
+    display: grid;
+    gap: 8px;
+    margin-top: 20px;
+}
+
+.dashboard_form_pair {
+    display: flex;
+    gap: 18px;
+    align-items: flex-start;
+    margin-top: 20px;
+}
+
+.dashboard_form_pair form {
+    flex: 1 1 0;
+    min-width: 0;
+    margin-top: 0;
+    padding: 12px;
+    border: 1.5px solid blue;
+}
+
+#buttons_left input,
+#buttons_left textarea,
+#buttons_left button {
+    box-sizing: border-box;
+    width: 100%;
+}
+
+#logs_right {
+    position: sticky;
+    top: 80px;
+}
+
+#logs_right h4 {
+    margin-top: 0;
+}
+
+#logs_right pre {
+    max-height: calc(100vh - 180px);
+    margin: 0;
+    overflow: auto;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    background: transparent;
+    padding: 0;
+}
+
 @media (max-width: 800px) {
-  #supplier_tables {
-    flex-direction: column;
+    #dashboard {
+        flex-direction: column;
+        width: calc(100% - 24px);
+        gap: 16px;
+    }
+
+    #buttons_left {
+        flex-basis: auto;
+        width: 100%;
+        max-height: none;
+    }
+
+    #logs_right {
+        flex-basis: auto;
+        width: 100%;
+        position: static;
+    }
+
+    #logs_right pre {
+        max-height: 45vh;
+    }
+
+    .dashboard-form-pair {
+        flex-direction: column;
+        gap: 0;
+    }
+
+    .dashboard-form-pair form {
+        width: 100%;
+    }
+}
+
+@media (max-width: 800px) {
+    #supplier_tables,
+    #data_tables {
+        flex-direction: column;
+    }
+
+    #data_summary {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+}
+
+@media (max-width: 500px) {
+    #data_summary {
+        grid-template-columns: 1fr;
+    }
 }
 
 @media (max-width: 800px) {
