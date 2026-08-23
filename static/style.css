@@ -147,7 +147,6 @@ footer {
     right: 0;
     bottom: 0;
     background-color: #ccc;
-    -webkit-transition: .4s;
     transition: .4s;
 }
 
@@ -159,7 +158,6 @@ footer {
     left: 4px;
     bottom: 4px;
     background-color: white;
-    -webkit-transition: .4s;
     transition: .4s;
 }
 
@@ -172,8 +170,6 @@ input:focus + .slider {
 }
 
 input:checked + .slider:before {
-    -webkit-transform: translateX(26px);
-    -ms-transform: translateX(26px);
     transform: translateX(26px);
 }
 
@@ -429,7 +425,6 @@ body .section {
     position: relative;
     width: 440px;
     max-width: 100%;
-    -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
     perspective: 800px;
     margin-top: 20px !important;
@@ -442,7 +437,6 @@ body .section {
     position: absolute;
     top: 0;
     left: 0;
-    -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
     transition: all 600ms ease-out;
 }
@@ -460,11 +454,7 @@ body .section {
     border-radius: 6px;
     left: 0;
     top: 0;
-    -webkit-transform-style: preserve-3d;
     transform-style: preserve-3d;
-    -webkit-backface-visibility: hidden;
-    -moz-backface-visibility: hidden;
-    -o-backface-visibility: hidden;
     backface-visibility: hidden;
 }
 
@@ -544,55 +534,14 @@ body .section {
     transition: all 200ms linear;
 }
 
-.form-group input:-ms-input-placeholder {
+.form-group input::placeholder {
     color: #c4c3ca;
     opacity: 0.7;
-    -webkit-transition: all 200ms linear;
     transition: all 200ms linear;
 }
 
-.form-group input::-moz-placeholder {
-    color: #c4c3ca;
-    opacity: 0.7;
-    -webkit-transition: all 200ms linear;
-    transition: all 200ms linear;
-}
-
-.form-group input:-moz-placeholder {
-    color: #c4c3ca;
-    opacity: 0.7;
-    -webkit-transition: all 200ms linear;
-    transition: all 200ms linear;
-}
-
-.form-group input::-webkit-input-placeholder {
-    color: #c4c3ca;
-    opacity: 0.7;
-    -webkit-transition: all 200ms linear;
-    transition: all 200ms linear;
-}
-
-.form-group input:focus:-ms-input-placeholder {
+.form-group input:focus::placeholder {
     opacity: 0;
-    -webkit-transition: all 200ms linear;
-    transition: all 200ms linear;
-}
-
-.form-group input:focus::-moz-placeholder {
-    opacity: 0;
-    -webkit-transition: all 200ms linear;
-    transition: all 200ms linear;
-}
-
-.form-group input:focus:-moz-placeholder {
-    opacity: 0;
-    -webkit-transition: all 200ms linear;
-    transition: all 200ms linear;
-}
-
-.form-group input:focus::-webkit-input-placeholder {
-    opacity: 0;
-    -webkit-transition: all 200ms linear;
     transition: all 200ms linear;
 }
 
@@ -602,22 +551,12 @@ body .section {
     font-size: 13px;
     font-weight: 600;
     text-transform: uppercase;
-    -webkit-transition: all 200ms linear;
     transition: all 200ms linear;
     padding: 0 30px;
     letter-spacing: 1px;
-    display: -webkit-inline-flex;
-    display: -ms-inline-flexbox;
     display: inline-flex;
-    -webkit-align-items: center;
-    -moz-align-items: center;
-    -ms-align-items: center;
     align-items: center;
-    -webkit-justify-content: center;
-    -moz-justify-content: center;
-    -ms-justify-content: center;
     justify-content: center;
-    -ms-flex-pack: center;
     text-align: center;
     border: none;
     background-color: #ffeba7;
@@ -815,26 +754,21 @@ body .section {
 /* Code for payment screen from w3schools */
 
 .row {
-    display: -ms-flexbox; /* IE10 */
     display: flex;
-    -ms-flex-wrap: wrap; /* IE10 */
     flex-wrap: wrap;
     margin-top: 10%;
   }
   
   .col-25 {
-    -ms-flex: 25%; /* IE10 */
     flex: 25%;
   }
   
   .col-50 {
-    -ms-flex: 50%; /* IE10 */
     flex: 50%;
     border: #020202 1px solid;
   }
   
   .col-75 {
-    -ms-flex: 75%; /* IE10 */
     flex: 75%;
   }
   
@@ -889,11 +823,11 @@ body .section {
   }
 
   #left{
-    align-items: left;
+        text-align: left;
   }
 
   #right{
-    align-items: right;
+        align-items: center;
   }
 
 .text{

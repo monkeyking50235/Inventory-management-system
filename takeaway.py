@@ -2,7 +2,15 @@ from pydoc import text
 import sqlite3
 from unicodedata import category
 import re
-from flask import Flask, g, render_template, request, redirect, url_for, session
+from flask import (
+    Flask,
+    g,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    session,
+)
 from flask_session import Session
 import os
 from flask_sqlalchemy import SQLAlchemy
@@ -10,14 +18,15 @@ from flask import flash, get_flashed_messages
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///takeaway_ordering.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
+app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///takeaway_ordering.db"
+app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
-# Configuration 
+# Configuration
 app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem" 
+app.config["SESSION_TYPE"] = "filesystem"
 # Initialize Flask-Session
 Session(app)
+
 
 # Adds the cart items and other data to all templates
 @app.context_processor
@@ -28,41 +37,51 @@ def inject_cart_data():
     total_price = 0
     if user_id:
         order_id = get_or_create_cart_order(user_id)
-        cart_items = query_db("""
-            SELECT item.item_id, item.menu_id, menu.item_name, menu.item_cost, menu.image_url,
+        cart_items = query_db(
+            """
+            SELECT item.item_id, item.menu_id, menu.item_name,
+                    menu.item_cost, menu.image_url,
                    COUNT(item.item_id) as quantity,
                    SUM(menu.item_cost) as total_price
             FROM item
             JOIN menu ON item.menu_id = menu.menu_id
             WHERE item.order_id = ?
             GROUP BY item.menu_id
-        """, [order_id])
+        """,
+            [order_id],
+        )
         total_quantity = sum(item["quantity"] for item in cart_items)
         total_price = round(sum(item["total_price"] for item in cart_items), 2)
     return dict(
         db_cart_items=cart_items,
         db_cart_total_quantity=total_quantity,
-        db_cart_total_price=total_price
+        db_cart_total_price=total_price,
     )
 
-@app.context_processor
+
+# Checks if account has owner permissions
 def permissions():
     perms = "no"
     if "name" in session:
-        owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
+        owner = query_db(
+            "SELECT owner FROM user WHERE email = ?", [session["name"]]
+        )
         for item in owner:
             if item[0] == 1:
                 perms = "yes"
     return dict(perms=perms)
 
-#Gets info from the database and prints it nicely
+
+# Gets info from the database and prints it nicely
+
 
 def get_db():
-    db = getattr(g, '_database', None)
+    db = getattr(g, "_database", None)
     if db is None:
         db = g._database = sqlite3.connect("takeaway_ordering.db")
         db.row_factory = sqlite3.Row
     return db
+
 
 def query_db(query, args=(), one=False, commit=False):
     db = get_db()
@@ -73,22 +92,33 @@ def query_db(query, args=(), one=False, commit=False):
         db.commit()
     return (rv[0] if rv else None) if one else rv
 
+
 @app.teardown_appcontext
 def close_connection(exception):
-    db = getattr(g, '_database', None)
+    db = getattr(g, "_database", None)
     if db is not None:
         db.close()
+
+# Code for the waste button
 
 @app.route("/waste", methods=["POST"])
 def log_waste():
     stock_id = request.form.get("stock_id")
     quantity = int(request.form.get("quantity", 1))
-    logemail = session["name"] 
-    employee_data = query_db("SELECT employee_id, name FROM employee WHERE email = ?", (logemail,), one=True)
+    logemail = session["name"]
+    employee_data = query_db(
+        "SELECT employee_id, name FROM employee WHERE email = ?",
+        (logemail,),
+        one=True,
+    )
     employee_id = employee_data[0]
     name = employee_data[1]
     db = get_db()
-    item = query_db("SELECT name, order_price FROM stock WHERE stock_id = ?", (stock_id,), one=True)
+    item = query_db(
+        "SELECT name, order_price FROM stock WHERE stock_id = ?",
+        (stock_id,),
+        one=True,
+    )
     available_quantity = get_stock_quantity(stock_id)
     if not item or quantity > available_quantity:
         flash("There is not enough stock available.")
@@ -96,71 +126,118 @@ def log_waste():
     cost = quantity * item["order_price"]
     time = datetime.now().strftime("%Y-%m-%d")
     consume_stock_quantity(stock_id, quantity)
-    db.execute("""INSERT INTO waste(stock_id, name, quantity, cost, time, employee_id)
+    db.execute(
+        """INSERT INTO waste(stock_id, name, quantity, cost, time, employee_id)
                VALUES (?, ?, ?, ?, ?, ?)""",
-                (stock_id, item["name"], quantity, cost, time, employee_id))
+        (stock_id, item["name"], quantity, cost, time, employee_id),
+    )
     db.commit()
-    flash (f"Logged {quantity}x {item['name']} as waste.")
+    flash(f"Logged {quantity}x {item['name']} as waste.")
     with open("log.txt", "a") as f:
         f.write(f"{time}: {name} logged {quantity}x {item['name']} as waste\n")
     return redirect(request.referrer)
+
+# Code for the order more button
 
 @app.route("/order_more", methods=["POST"])
 def order_more():
     stock_id = request.form.get("stock_id")
     quantity = int(request.form.get("quantity", 1))
-    logemail = session["name"] 
-    employee_data = query_db("SELECT employee_id, name, store_id FROM employee WHERE email = ?", (logemail,), one=True)
-    supplier = query_db("SELECT supplier_id, delivery_time FROM supplier WHERE stock_id = ?", (stock_id,), one=True)
+    logemail = session["name"]
+    employee_data = query_db(
+        "SELECT employee_id, name, store_id FROM employee WHERE email = ?",
+        (logemail,),
+        one=True,
+    )
+    supplier = query_db(
+        "SELECT supplier_id, delivery_time FROM supplier WHERE stock_id = ?",
+        (stock_id,),
+        one=True,
+    )
     if not supplier:
         flash("No supplier is assigned to this item.")
         return redirect(request.referrer)
     name = employee_data[1]
     store_id = employee_data[2]
     db = get_db()
-    item = query_db("SELECT name, order_price FROM stock WHERE stock_id = ?", (stock_id,), one=True)
+    item = query_db(
+        "SELECT name, order_price FROM stock WHERE stock_id = ?",
+        (stock_id,),
+        one=True,
+    )
     cost = quantity * item["order_price"]
     date_ordered = datetime.now().strftime("%Y-%m-%d")
-    db.execute("""INSERT INTO supply_order(supplier_id, store_id, stock_id, cost, status, quantity, date_ordered)
-               VALUES (?, ?, ?, ?, 'En route', ?, ?)""",
-                (supplier['supplier_id'], store_id, stock_id, cost, quantity, date_ordered))
+    db.execute(
+        "INSERT INTO supply_order(supplier_id, store_id, stock_id, "
+        "cost, status, quantity, date_ordered) "
+        "VALUES (?, ?, ?, ?, 'En route', ?, ?)",
+        (
+            supplier["supplier_id"],
+            store_id,
+            stock_id,
+            cost,
+            quantity,
+            date_ordered,
+        ),
+    )
     db.commit()
-    flash (f"Added order for {quantity}x {item['name']}.")
+    flash(f"Added order for {quantity}x {item['name']}.")
     with open("log.txt", "a") as f:
         f.write(f"{date_ordered}: {name} ordered {quantity}x {item['name']}\n")
     return redirect(request.referrer)
+
+# Code for the order more button
 
 @app.route("/add_employee", methods=["POST"])
 def add_employee():
     email = request.form.get("email")
     job = request.form.get("job")
-    logemail = session["name"] 
-    user_data = query_db("SELECT user_id, name, location, phone_number FROM user WHERE email = ?", (email,), one=True)
+    logemail = session["name"]
+    user_data = query_db(
+        "SELECT user_id, name, location, phone_number "
+        "FROM user WHERE email = ?",
+        (email,),
+        one=True,
+    )
     if not user_data:
         flash("There is no user with that email.")
         return redirect(request.referrer)
-    existing_employee = query_db("SELECT employee_id FROM employee WHERE email = ?", (email,), one=True)
+    existing_employee = query_db(
+        "SELECT employee_id FROM employee WHERE email = ?", (email,), one=True
+    )
     if existing_employee:
         flash("This user is already an employee.")
         return redirect(request.referrer)
-    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?", (logemail,), one=True
+    )
     db = get_db()
     time = datetime.now().strftime("%Y-%m-%d")
-    db.execute("""INSERT INTO employee(name, job, email, phone_number, address, user_id)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-                (user_data[1], job, email, user_data[3], user_data[2], user_data[0]))
+    db.execute(
+        "INSERT INTO employee(name, job, email, phone_number, "
+        "address, user_id) VALUES (?, ?, ?, ?, ?, ?)",
+        (user_data[1], job, email, user_data[3], user_data[2], user_data[0]),
+    )
     db.commit()
-    flash (f"Added {user_data[1]} as an employee.")
+    flash(f"Added {user_data[1]} as an employee.")
     with open("log.txt", "a") as f:
-        f.write(f"{time}: {employee_data[0]} added {user_data[1]} as an employee\n")
+        f.write(
+            f"{time}: {employee_data[0]} added {user_data[1]} as an employee\n"
+        )
     return redirect(request.referrer)
+
+# Code for the remove employee button
 
 @app.route("/remove_employee", methods=["POST"])
 def remove_employee():
     email = request.form.get("email")
-    logemail = session["name"] 
-    ex_employee_data = query_db("SELECT name FROM employee WHERE email = ?", (email,), one=True)
-    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    logemail = session["name"]
+    ex_employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?", (email,), one=True
+    )
+    employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?", (logemail,), one=True
+    )
     if not ex_employee_data:
         flash("There is no user with that email.")
         return redirect(request.referrer)
@@ -171,10 +248,15 @@ def remove_employee():
     time = datetime.now().strftime("%Y-%m-%d")
     db.execute("""DELETE FROM employee WHERE email = ?""", (email,))
     db.commit()
-    flash (f"Removed {ex_employee_data[0]} from employees.")
+    flash(f"Removed {ex_employee_data[0]} from employees.")
     with open("log.txt", "a") as f:
-        f.write(f"{time}: {employee_data[0]} removed {ex_employee_data[0]} from employees\n")
+        f.write(
+            f"{time}: {employee_data[0]} removed "
+            f"{ex_employee_data[0]} from employees\n"
+        )
     return redirect(request.referrer)
+
+# Code for the add item button
 
 @app.route("/add_item", methods=["POST"])
 def add_item():
@@ -185,32 +267,45 @@ def add_item():
     spice = request.form.get("spice")
     category = request.form.get("category").lower()
     image = request.form.get("image")
-    logemail = session["name"] 
-    existing_item = query_db("SELECT item_name FROM menu WHERE item_name = ?", (name,), one=True)
+    logemail = session["name"]
+    existing_item = query_db(
+        "SELECT item_name FROM menu WHERE item_name = ?", (name,), one=True
+    )
     if existing_item:
         flash("This item already exists.")
         return redirect(request.referrer)
     if category != "pizza" and category != "side" and category != "drink":
         flash("The item must be a pizza, side, or drink.")
         return redirect(request.referrer)
-    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?", (logemail,), one=True
+    )
     db = get_db()
     time = datetime.now().strftime("%Y-%m-%d")
-    db.execute("""INSERT INTO menu(item_name, item_cost, item_description, contains_meat, contains_spice, image_url, category)
-               VALUES (?, ?, ?, ?, ?, ?, ?)""",
-                (name, cost, description, meat, spice, image, category))
+    db.execute(
+        "INSERT INTO menu(item_name, item_cost, item_description, "
+        "contains_meat, contains_spice, image_url, category) "
+        "VALUES (?, ?, ?, ?, ?, ?, ?)",
+        (name, cost, description, meat, spice, image, category),
+    )
     db.commit()
-    flash (f"Added {name} as an item.")
+    flash(f"Added {name} as an item.")
     with open("log.txt", "a") as f:
         f.write(f"{time}: {employee_data[0]} added {name} as an item\n")
     return redirect(request.referrer)
 
+# Code for the remove item button
+
 @app.route("/remove_item", methods=["POST"])
 def remove_item():
     name = request.form.get("name")
-    logemail = session["name"] 
-    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
-    item_data = query_db("SELECT item_name FROM menu WHERE item_name = ?", (name,), one=True)
+    logemail = session["name"]
+    employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?", (logemail,), one=True
+    )
+    item_data = query_db(
+        "SELECT item_name FROM menu WHERE item_name = ?", (name,), one=True
+    )
     if not item_data:
         flash("There is no supplier with that email.")
         return redirect(request.referrer)
@@ -219,10 +314,12 @@ def remove_item():
     time = datetime.now().strftime("%Y-%m-%d")
     db.execute("""DELETE FROM menu WHERE item_name = ?""", (name,))
     db.commit()
-    flash (f"Removed {name} from menu.")
+    flash(f"Removed {name} from menu.")
     with open("log.txt", "a") as f:
         f.write(f"{time}: {employee_name} removed {name} from menu\n")
     return redirect(request.referrer)
+
+# Code for the add supplier button
 
 @app.route("/add_supplier", methods=["POST"])
 def add_supplier():
@@ -232,45 +329,77 @@ def add_supplier():
     phone_number = request.form.get("phone_number")
     stock = request.form.get("stock")
     delivery_time = request.form.get("delivery_time")
-    suppliers = query_db("SELECT supplier_id FROM supplier WHERE email = ?", (email,), one=True)
+    suppliers = query_db(
+        "SELECT supplier_id FROM supplier WHERE email = ?", (email,), one=True
+    )
     if suppliers:
         flash("That supplier already exists.")
         return redirect(request.referrer)
-    stock_items = [item.strip() for item in re.split(r"[,\n]+", stock) if item.strip()]
+    stock_items = [
+        item.strip() for item in re.split(r"[,\n]+", stock) if item.strip()
+    ]
     db = get_db()
     for item_name in stock_items:
         item_name_clean = item_name.strip()
-        stock_row = query_db("SELECT stock_id FROM stock WHERE name = ?", (item_name_clean,), one=True)
+        stock_row = query_db(
+            "SELECT stock_id FROM stock WHERE name = ?",
+            (item_name_clean,),
+            one=True,
+        )
         if not stock_row:
             if not re.search(r"\(?kg\)?\s*$", item_name_clean, re.I):
-                for alt_name in (item_name_clean + " (kg)", item_name_clean + " kg"):
-                    stock_row = query_db("SELECT stock_id FROM stock WHERE name = ?", (alt_name,), one=True)
+                for alt_name in (
+                    item_name_clean + " (kg)",
+                    item_name_clean + " kg",
+                ):
+                    stock_row = query_db(
+                        "SELECT stock_id FROM stock WHERE name = ?",
+                        (alt_name,),
+                        one=True,
+                    )
                     if stock_row:
                         break
             else:
-                alt_name = re.sub(r"\s*\(?kg\)?\s*$", "", item_name_clean, flags=re.I).strip()
-                stock_row = query_db("SELECT stock_id FROM stock WHERE name = ?", (alt_name,), one=True)
+                alt_name = re.sub(
+                    r"\s*\(?kg\)?\s*$", "", item_name_clean, flags=re.I
+                ).strip()
+                stock_row = query_db(
+                    "SELECT stock_id FROM stock WHERE name = ?",
+                    (alt_name,),
+                    one=True,
+                )
         if not stock_row:
             flash(f"Stock item '{item_name_clean}' not found.")
             return redirect(request.referrer)
         db.execute(
-            "INSERT INTO supplier(name, address, email, phone_number, stock_id, delivery_time) VALUES (?, ?, ?, ?, ?, ?)",
-            (name, address, email, phone_number, stock_row[0], delivery_time)
+            "INSERT INTO supplier(name, address, email, phone_number, "
+            "stock_id, delivery_time) VALUES (?, ?, ?, ?, ?, ?)",
+            (name, address, email, phone_number, stock_row[0], delivery_time),
         )
     db.commit()
     time = datetime.now().strftime("%Y-%m-%d")
-    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (session.get("name"),), one=True)
+    employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?",
+        (session.get("name"),),
+        one=True,
+    )
     flash(f"Added supplier {name}.")
     with open("log.txt", "a") as f:
         f.write(f"{time}: {employee_data[0]} added supplier {name}\n")
     return redirect(request.referrer)
 
+# Code for the remove supplier button
+
 @app.route("/remove_supplier", methods=["POST"])
 def remove_supplier():
     email = request.form.get("email")
-    logemail = session["name"] 
-    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
-    supplier_data = query_db("SELECT name FROM supplier WHERE email = ?", (email,), one=True)
+    logemail = session["name"]
+    employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?", (logemail,), one=True
+    )
+    supplier_data = query_db(
+        "SELECT name FROM supplier WHERE email = ?", (email,), one=True
+    )
     if not supplier_data:
         flash("There is no supplier with that email.")
         return redirect(request.referrer)
@@ -279,61 +408,88 @@ def remove_supplier():
     time = datetime.now().strftime("%Y-%m-%d")
     db.execute("""DELETE FROM supplier WHERE email = ?""", (email,))
     db.commit()
-    flash (f"Removed {supplier_data[0]} from suppliers.")
+    flash(f"Removed {supplier_data[0]} from suppliers.")
     with open("log.txt", "a") as f:
         f.write(f"{time}: {name} removed {supplier_data[0]} from suppliers\n")
     return redirect(request.referrer)
+
 
 # Gets the users id from the database
 def get_user_id():
     if "name" not in session:
         return None
-    row = query_db("SELECT user_id FROM user WHERE email = ?", [session["name"]], one=True)
+    row = query_db(
+        "SELECT user_id FROM user WHERE email = ?", [session["name"]], one=True
+    )
     return row["user_id"] if row else None
 
+# Gets the total price of the stock
+
 def get_total_price():
-    row = query_db("""
+    row = query_db(
+        """
         SELECT COALESCE(SUM(stock.order_price * stock_quantity.quantity), 0)
         FROM stock
         JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
-    """, one=True)
+    """,
+        one=True,
+    )
     return round(row[0], 2)
+
+# Gets the total quantity of the stock
 
 def get_stock_quantity(stock_id):
     row = query_db(
-        "SELECT COALESCE(SUM(quantity), 0) AS quantity FROM stock_quantity WHERE stock_id = ?",
-        (stock_id,), one=True
+        "SELECT COALESCE(SUM(quantity), 0) AS quantity "
+        "FROM stock_quantity WHERE stock_id = ?",
+        (stock_id,),
+        one=True,
     )
     return row["quantity"]
+
+# Removes stock thats used
 
 def consume_stock_quantity(stock_id, quantity):
     batches = query_db(
         "SELECT stock_quantity_id, quantity FROM stock_quantity "
-        "WHERE stock_id = ? AND quantity > 0 ORDER BY arrival_date, stock_quantity_id",
-        (stock_id,)
+        "WHERE stock_id = ? AND quantity > 0 "
+        "ORDER BY arrival_date, stock_quantity_id",
+        (stock_id,),
     )
     remaining = quantity
     db = get_db()
     for batch in batches:
         used = min(remaining, batch["quantity"])
         db.execute(
-            "UPDATE stock_quantity SET quantity = quantity - ? WHERE stock_quantity_id = ?",
-            (used, batch["stock_quantity_id"])
+            "UPDATE stock_quantity SET quantity = quantity - ? "
+            "WHERE stock_quantity_id = ?",
+            (used, batch["stock_quantity_id"]),
         )
         remaining -= used
         if remaining == 0:
             break
 
-""" Selects the info from the order table for the current user, ensuring its 
+
+""" Selects the info from the order table for the current user, ensuring its
 a current order. If no order exists then it makes one"""
+
+
 def get_or_create_cart_order(user_id):
-    order = query_db("SELECT * FROM order_entry WHERE user_id = ? AND status = 'cart'", [user_id], one=True)
+    order = query_db(
+        "SELECT * FROM order_entry WHERE user_id = ? AND status = 'cart'",
+        [user_id],
+        one=True,
+    )
     if order:
         return order["order_id"]
     db = get_db()
-    cur = db.execute("INSERT INTO order_entry (user_id, status) VALUES (?, ?)", (user_id, "cart"))
+    cur = db.execute(
+        "INSERT INTO order_entry (user_id, status) VALUES (?, ?)",
+        (user_id, "cart"),
+    )
     db.commit()
     return cur.lastrowid
+
 
 # Calculates the total cost of the items in the cart
 def total():
@@ -341,50 +497,58 @@ def total():
     if not user_id:
         return 0
     order_id = get_or_create_cart_order(user_id)
-    cart_items = query_db("""
-        SELECT item.item_id, item.menu_id, menu.item_name, menu.item_cost, menu.image_url,
+    cart_items = query_db(
+        """
+         SELECT item.item_id, item.menu_id, menu.item_name, menu.item_cost,
+             menu.image_url,
                COUNT(item.item_id) as quantity,
                SUM(Menu.item_cost) as total_price
         FROM item
         JOIN menu ON item.menu_id = menu.menu_id
         WHERE item.order_id = ?
         GROUP BY item.menu_id
-    """, [order_id])
+    """,
+        [order_id],
+    )
     total = sum(item["item_cost"] * item["quantity"] for item in cart_items)
     total = round(total, 2)
     return total if total else 0
 
+# Finds the expiry date of the stock
+
 def expiry(arrival_date, expiration_time, batch_quantity):
     current_time = datetime.now()
     if not arrival_date or batch_quantity <= 0:
-        return {"text": "No stock", "category": "empty"}
-    obtained_date = datetime.strptime(arrival_date, '%Y-%m-%d')
+        return "No stock"
+    obtained_date = datetime.strptime(arrival_date, "%Y-%m-%d")
     expire_date = obtained_date + timedelta(days=int(expiration_time))
     if current_time >= expire_date:
-        return {
-            "text": f"Expired ({batch_quantity} in batch)",
-            "category": "expired"
-        }
-    else: 
+        return f"Expired ({batch_quantity} in batch)"
+    else:
         days_left = (expire_date - current_time).days
-        life_percentage = (days_left / int(expiration_time)) * 100
         day_label = "day" if days_left == 1 else "days"
-        if life_percentage <= 20: 
-            return {"text": f"Expires in {days_left} {day_label} ({batch_quantity} in batch)",
-            "category": "warning"}
-        else:
-            return {"text": f"Expires in {days_left} {day_label} ({batch_quantity} in batch)",
-            "category": "safe"}
-@app.route("/status", methods=['POST'])        
+        return (
+            f"Expires in {days_left} {day_label} ({batch_quantity} in batch)"
+        )
+
+# Finds if the employee is clocked in
+
+@app.route("/status", methods=["POST"])
 def status():
     db = get_db()
     user_id = get_user_id()
-    current_status = query_db("SELECT working FROM employee WHERE user_id = ?", (user_id,))
+    current_status = query_db(
+        "SELECT working FROM employee WHERE user_id = ?", (user_id,)
+    )
     for item in current_status:
         if item[0] == 1:
-            db.execute("UPDATE employee SET working = 0 WHERE user_id = ?", (user_id,))
+            db.execute(
+                "UPDATE employee SET working = 0 WHERE user_id = ?", (user_id,)
+            )
         elif item[0] == 0:
-            db.execute("UPDATE employee SET working = 1 WHERE user_id = ?", (user_id,))
+            db.execute(
+                "UPDATE employee SET working = 1 WHERE user_id = ?", (user_id,)
+            )
     db.commit()
 
 
@@ -394,16 +558,17 @@ def cart():
     cart_total = total()
     return redirect(request.referrer, cart_total=cart_total)
 
+
 # When the add to cart button is pressed, adds item to cart
-@app.route('/add', methods=['POST'])
+@app.route("/add", methods=["POST"])
 def add_product_to_cart():
     user_id = get_user_id()
     if not user_id:
         return redirect(url_for("profile"))
-    menu_id = int(request.form.get('item_id'))
+    menu_id = int(request.form.get("item_id"))
     try:
-        quantity = int(request.form.get('quantity', 1))
-    except:
+        quantity = int(request.form.get("quantity", 1))
+    except (TypeError, ValueError):
         menu_error = "You must have a number."
         sql_pizza = "SELECT * FROM menu WHERE category = 'Pizza';"
         sql_drink = "SELECT * FROM menu WHERE category = 'Drink';"
@@ -411,14 +576,24 @@ def add_product_to_cart():
         pizzas = query_db(sql_pizza)
         drinks = query_db(sql_drink)
         sides = query_db(sql_side)
-        return render_template("menu.html", menu_error=menu_error, pizzas=pizzas, drinks=drinks, sides=sides)
+        return render_template(
+            "menu.html",
+            menu_error=menu_error,
+            pizzas=pizzas,
+            drinks=drinks,
+            sides=sides,
+        )
     order_id = get_or_create_cart_order(user_id)
     db = get_db()
     for _ in range(quantity):
-        db.execute("INSERT INTO item (order_id, menu_id) VALUES (?, ?)", (order_id, menu_id))
+        db.execute(
+            "INSERT INTO item (order_id, menu_id) VALUES (?, ?)",
+            (order_id, menu_id),
+        )
     db.commit()
     flash("Item added to cart.", "info")
     return redirect(url_for("menu"))
+
 
 # Removes all items from the cart
 @app.route("/empty_cart")
@@ -433,6 +608,7 @@ def empty_cart():
     flash("All items removed from cart.", "info")
     return redirect(request.referrer)
 
+
 # Removes all of one item from the cart
 @app.route("/delete_cart_item/<int:menu_id>")
 def delete_cart_item(menu_id):
@@ -441,47 +617,79 @@ def delete_cart_item(menu_id):
         return redirect(url_for("profile"))
     order_id = get_or_create_cart_order(user_id)
     db = get_db()
-    db.execute("DELETE FROM item WHERE order_id = ? AND menu_id = ?", (order_id, menu_id))
+    db.execute(
+        "DELETE FROM item WHERE order_id = ? AND menu_id = ?",
+        (order_id, menu_id),
+    )
     db.commit()
     flash("Items removed from cart.", "info")
-    return redirect(request.referrer )
+    return redirect(request.referrer)
 
-# Sends a pop up to confirm the order has been placed, and sets the order status to placed
+
+# Sends a pop up to confirm the order and sets the order status.
 @app.route("/checkout_success", methods=["POST", "GET"])
 def checkout_success():
     user_id = get_user_id()
     if not user_id:
         return redirect(url_for("profile"))
     order_id = get_or_create_cart_order(user_id)
-    cart_items = query_db("""
-    SELECT menu.menu_id, menu.item_name, menu.item_cost, menu.image_url, COUNT(item.item_id) as quantity
+    cart_items = query_db(
+        """
+        SELECT menu.menu_id, menu.item_name, menu.item_cost,
+               menu.image_url, COUNT(item.item_id) as quantity
     FROM item
     JOIN menu ON item.menu_id = menu.menu_id
     WHERE item.order_id = ?
     GROUP BY menu.menu_id
-    """, [order_id])
+    """,
+        [order_id],
+    )
     if not cart_items:
-        return redirect(url_for("checkout", error="Your cart is empty. Please add items before purchasing."))
+        empty_cart_error = (
+            "Your cart is empty. Please add items before purchasing."
+        )
+        return redirect(
+            url_for(
+                "checkout",
+                error=empty_cart_error,
+            )
+        )
     cart_total = total()
     db = get_db()
-    db.execute("UPDATE order_entry SET status = 'Placed', store_id = 1, item_id = ?, cost = ? WHERE order_id = ?", (order_id, cart_total, order_id,))
+    db.execute(
+        "UPDATE order_entry SET status = 'Placed', store_id = 1, "
+        "item_id = ?, cost = ? WHERE order_id = ?",
+        (
+            order_id,
+            cart_total,
+            order_id,
+        ),
+    )
     db.commit()
-    #This print would be replaced with a way to send this order to the store making it.
+    # This print would be replaced with a store notification.
     for item in cart_items:
-        print(f"Order {order_id} placed with total cost: {cart_total}, contains items: {item['item_name']} (Quantity: {item['quantity']})")
+        print(
+            f"Order {order_id} placed with total cost: {cart_total}, "
+            f"contains items: {item['item_name']} "
+            f"(Quantity: {item['quantity']})"
+        )
     return redirect(url_for("checkout", order_placed=1))
+
 
 @app.route("/")
 def home():
     return render_template("index.html")
+
 
 @app.route("/profile")
 def profile():
     if "name" in session:
         return redirect(url_for("details"))
     return render_template("profile.html")
-""" Ensures all inputs for the profile are valid, and then lets the user through
- and creates an account if needed"""
+
+
+"""Ensure profile inputs are valid and create an account if needed."""
+
 
 @app.route("/validate_profile", methods=["POST"])
 def validate_profile():
@@ -498,22 +706,28 @@ def validate_profile():
         logname = request.form.get("logname")
         if not logname or not logemail or not logpass:
             signup_error = "All fields are required for Sign Up."
-            return render_template("profile.html", signup_error=signup_error, show_signup=True)
+            return render_template(
+                "profile.html", signup_error=signup_error, show_signup=True
+            )
         if logemail in user_emails:
             signup_error = "This email is already in use."
-            return render_template("profile.html", signup_error=signup_error, show_signup=True)
+            return render_template(
+                "profile.html", signup_error=signup_error, show_signup=True
+            )
         elif logpass in user_passwords.values():
             signup_error = "This password is already in use."
-            return render_template("profile.html", signup_error=signup_error, show_signup=True)
+            return render_template(
+                "profile.html", signup_error=signup_error, show_signup=True
+            )
         else:
             db = get_db()
             cursor = db.cursor()
             cursor.execute(
-            """
+                """
                 INSERT INTO user (name, email, password)
                 VALUES (?, ?, ?)
             """,
-            (logname, logemail, logpass)
+                (logname, logemail, logpass),
             )
             db.commit()
             session["name"] = logemail
@@ -521,19 +735,30 @@ def validate_profile():
     elif action == "login":
         if logemail in user_emails and user_passwords.get(logemail) == logpass:
             session["name"] = logemail
-            user_id = query_db("SELECT user_id FROM user WHERE email = ?", [logemail], one=True)["user_id"]
-            employee = query_db("SELECT * FROM employee WHERE user_id = ?", [user_id], one=True)
+            user_id = query_db(
+                "SELECT user_id FROM user WHERE email = ?",
+                [logemail],
+                one=True,
+            )["user_id"]
+            employee = query_db(
+                "SELECT * FROM employee WHERE user_id = ?", [user_id], one=True
+            )
             if employee:
                 session["role"] = "employee"
             else:
                 session["role"] = "customer"
-            return redirect(url_for("details", logemail=logemail, logpass=logpass))
+            return redirect(
+                url_for("details", logemail=logemail, logpass=logpass)
+            )
         else:
             login_error = "Invalid email or password."
-            return render_template("profile.html", login_error=login_error, show_signup=False)
+            return render_template(
+                "profile.html", login_error=login_error, show_signup=False
+            )
     else:
         error = "Invalid action."
         return render_template("profile.html", error=error)
+
 
 @app.route("/menu")
 def menu():
@@ -543,42 +768,54 @@ def menu():
     pizzas = query_db(sql_pizza)
     drinks = query_db(sql_drink)
     sides = query_db(sql_side)
-    added = request.args.get('added')
-    return render_template("menu.html", pizzas=pizzas, drinks=drinks, sides=sides, added=added)
+    added = request.args.get("added")
+    return render_template(
+        "menu.html", pizzas=pizzas, drinks=drinks, sides=sides, added=added
+    )
+
 
 @app.route("/about")
 def about():
     return render_template("about.html")
 
+
 @app.route("/layout")
 def layout():
     return render_template("layout.html", session=session)
+
 
 @app.route("/details")
 def details():
     if "name" not in session:
         return redirect(url_for("profile"))
-    logemail = session["name"] 
+    logemail = session["name"]
     sql_user = "SELECT * FROM user;"
     users = query_db(sql_user)
     employee = query_db(
         "SELECT working FROM employee WHERE email = ?", (logemail,), one=True
     )
     working = employee["working"] if employee else 0
-    return render_template("details.html", logemail=logemail, users=users, working=working)
+    return render_template(
+        "details.html", logemail=logemail, users=users, working=working
+    )
 
-#Cancel the current order and log out the user
+
+# Cancel the current order and log out the user
 @app.route("/logout")
 def logout():
     user_id = get_user_id()
     order_id = get_or_create_cart_order(user_id)
     db = get_db()
-    db.execute("UPDATE order_entry SET status = 'Cancelled' WHERE order_id = ?", (order_id,))
+    db.execute(
+        "UPDATE order_entry SET status = 'Cancelled' WHERE order_id = ?",
+        (order_id,),
+    )
     db.commit()
     session.clear()
     return redirect(url_for("home"))
 
-#delete the users account
+
+# delete the users account
 @app.route("/delete_account", methods=["POST"])
 def delete_account():
     if "name" not in session:
@@ -591,7 +828,8 @@ def delete_account():
     session.clear()
     return redirect(url_for("home"))
 
-#Lets the user edit their details except email, ensuring the password is not already in use
+
+# Lets the user edit details except email and prevents duplicate passwords.
 @app.route("/edit_details", methods=["POST"])
 def edit_details():
     if "name" not in session:
@@ -608,31 +846,44 @@ def edit_details():
     logpass = query_db(sql_password)
     logpass_list = [row[0] for row in logpass]
     if password in logpass_list:
-        show_overlay="true"
-        return render_template("details.html", users=users, logemail=logemail, 
-                               error="Password already in use.",
-                               show_overlay=show_overlay)
+        show_overlay = "true"
+        return render_template(
+            "details.html",
+            users=users,
+            logemail=logemail,
+            error="Password already in use.",
+            show_overlay=show_overlay,
+        )
     else:
         db = get_db()
         cursor = db.cursor()
-        cursor.execute("""
+        cursor.execute(
+            """
         UPDATE user
-        SET name = ?, password = ?, location = ?, "phone number" = ?, "credit card number" = ?
+        SET name = ?, password = ?, location = ?, "phone number" = ?,
+            "credit card number" = ?
         WHERE email = ?
-        """, (name, password, location, phone_number, credit_card, logemail))
+        """,
+            (name, password, location, phone_number, credit_card, logemail),
+        )
         db.commit()
         session["display_name"] = name
         return redirect(url_for("details"))
 
+# Empties the log file
+
 @app.route("/delete_logs", methods=["POST"])
 def delete_logs():
-    logemail = session["name"] 
-    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    logemail = session["name"]
+    employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?", (logemail,), one=True
+    )
     name = employee_data[0]
     time = datetime.now().strftime("%Y-%m-%d")
     with open("log.txt", "w", encoding="utf-8") as f:
         f.write(f"{time}: {name} cleared the logs\n")
     return redirect(request.referrer)
+
 
 # Adds the checkout page with the cart items and cost
 @app.route("/checkout")
@@ -642,17 +893,29 @@ def checkout():
     details = query_db("SELECT * FROM user WHERE email = ?", [session["name"]])
     user_id = get_user_id()
     order_id = get_or_create_cart_order(user_id)
-    cart_items = query_db("""
-        SELECT menu.menu_id, menu.item_name, menu.item_cost, menu.image_url, COUNT(item.item_id) as quantity
+    cart_items = query_db(
+        """
+         SELECT menu.menu_id, menu.item_name, menu.item_cost, menu.image_url,
+             COUNT(item.item_id) as quantity
         FROM item
         JOIN menu ON item.menu_id = menu.menu_id
         WHERE item.order_id = ?
         GROUP BY menu.menu_id
-    """, [order_id])
+    """,
+        [order_id],
+    )
     cart_total = total()
     order_placed = request.args.get("order_placed")
     error = request.args.get("error")
-    return render_template("checkout.html", details=details, cart_items=cart_items, cart_total=cart_total, order_placed=order_placed, error=error)
+    return render_template(
+        "checkout.html",
+        details=details,
+        cart_items=cart_items,
+        cart_total=cart_total,
+        order_placed=order_placed,
+        error=error,
+    )
+
 
 @app.route("/stock")
 def stock():
@@ -661,12 +924,13 @@ def stock():
     stock_list = []
     total_value = get_total_price()
     info = query_db("""
-        SELECT stock.stock_id, stock.order_price, stock.name, stock.expiration_time,
+         SELECT stock.stock_id, stock.order_price, stock.name,
+             stock.expiration_time,
                COALESCE(SUM(stock_quantity.quantity), 0) AS stock_quantity
         FROM stock
         LEFT JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
         GROUP BY stock.stock_id
-        ORDER BY stock_quantity DESC, stock.stock_id
+        ORDER BY stock.stock_id
     """)
     for item in info:
         quantity = item["stock_quantity"]
@@ -674,12 +938,19 @@ def stock():
             "SELECT arrival_date, SUM(quantity) AS batch_quantity "
             "FROM stock_quantity WHERE stock_id = ? AND quantity > 0 "
             "GROUP BY arrival_date ORDER BY arrival_date LIMIT 1",
-            (item["stock_id"],), one=True
+            (item["stock_id"],),
+            one=True,
         )
         expiry_info = expiry(
             batch["arrival_date"] if batch else None,
             item["expiration_time"],
-            batch["batch_quantity"] if batch else 0
+            batch["batch_quantity"] if batch else 0,
+        )
+        expiry_date = (
+            datetime.strptime(batch["arrival_date"], "%Y-%m-%d")
+            + timedelta(days=int(item["expiration_time"]))
+            if batch
+            else datetime.max
         )
         stock_info = {
             "id": item["stock_id"],
@@ -687,9 +958,14 @@ def stock():
             "qty": quantity,
             "price": item["order_price"],
             "expiry_length": expiry_info,
+            "expiry_date": expiry_date,
         }
         stock_list.append(stock_info)
-    return render_template("stock.html", stock_list=stock_list, total_value=total_value)
+    stock_list.sort(key=lambda item: item["expiry_date"])
+    return render_template(
+        "stock.html", stock_list=stock_list, total_value=total_value
+    )
+
 
 @app.route("/owner_dashboard")
 def owner_dashboard():
@@ -706,7 +982,9 @@ def owner_dashboard():
         else:
             work_status = "Not working"
         store_id = item[6]
-        store_name = query_db("SELECT address FROM store WHERE store_id = ?", (store_id,))
+        store_name = query_db(
+            "SELECT address FROM store WHERE store_id = ?", (store_id,)
+        )
         for thing in store_name:
             store_name = thing[0]
         employee_info = {
@@ -717,15 +995,20 @@ def owner_dashboard():
             "phone_number": item[4],
             "address": item[5],
             "store": store_name,
-            "working_status": work_status
+            "working_status": work_status,
         }
         employee_list.append(employee_info)
 
-    owner = query_db("SELECT owner FROM user WHERE email = ?", [session["name"]])
+    owner = query_db(
+        "SELECT owner FROM user WHERE email = ?", [session["name"]]
+    )
     for item in owner:
         if item[0] == 1:
-            return render_template("owner_dashboard.html", employee_list=employee_list, logs=logs)
+            return render_template(
+                "owner_dashboard.html", employee_list=employee_list, logs=logs
+            )
     return redirect(url_for("home"))
+
 
 @app.route("/data")
 def data():
@@ -737,7 +1020,11 @@ def data():
         cost = cost + sale[0]
     average = cost / len(sales) if sales else 0
     waste_list = []
-    info = query_db("SELECT name, SUM(quantity) AS total, SUM(cost) AS cost FROM waste WHERE time >= datetime('now', '-30 days') GROUP BY name ORDER BY total DESC")
+    info = query_db(
+        "SELECT name, SUM(quantity) AS total, SUM(cost) AS cost "
+        "FROM waste WHERE time >= datetime('now', '-30 days') "
+        "GROUP BY name ORDER BY total DESC"
+    )
     for item in info:
         waste_info = {
             "name": item[0],
@@ -751,14 +1038,18 @@ def data():
         FROM stock
         JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
         WHERE stock_quantity.quantity > 0
-        AND date(stock_quantity.arrival_date, '+' || stock.expiration_time || ' days') = date('now')
+        AND date(stock_quantity.arrival_date, '+' || stock.expiration_time ||
+             ' days') = date('now')
         GROUP BY stock.stock_id, stock.name
         ORDER BY stock.name""")
 
-    active_staff = query_db("SELECT name, job FROM employee WHERE working = 1 ORDER BY name")
+    active_staff = query_db(
+        "SELECT name, job FROM employee WHERE working = 1 ORDER BY name"
+    )
 
     low_stock = query_db("""
-        SELECT stock.name, COALESCE(SUM(stock_quantity.quantity), 0) AS quantity
+         SELECT stock.name, COALESCE(SUM(stock_quantity.quantity), 0) AS
+             quantity
         FROM stock
         LEFT JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
         GROUP BY stock.stock_id, stock.name
@@ -766,9 +1057,15 @@ def data():
         ORDER BY quantity, stock.name""")
 
     return render_template(
-        "data.html", cost=cost, average=round(average, 2), waste_list=waste_list,
-        expiring_today=expiring_today, active_staff=active_staff,
-        low_stock=low_stock,)
+        "data.html",
+        cost=cost,
+        average=round(average, 2),
+        waste_list=waste_list,
+        expiring_today=expiring_today,
+        active_staff=active_staff,
+        low_stock=low_stock,
+    )
+
 
 @app.route("/suppliers")
 def suppliers():
@@ -790,8 +1087,12 @@ def suppliers():
     inform = query_db("SELECT * FROM supply_order ")
     if inform:
         for item in inform:
-            item_name = query_db("SELECT name FROM stock WHERE stock_id = ?", [item[3]])
-            supplier_name = query_db("SELECT name FROM supplier WHERE supplier_id = ?", [item[1]])
+            item_name = query_db(
+                "SELECT name FROM stock WHERE stock_id = ?", [item[3]]
+            )
+            supplier_name = query_db(
+                "SELECT name FROM supplier WHERE supplier_id = ?", [item[1]]
+            )
             order_info = {
                 "supply_order_id": item[0],
                 "store_id": item[2],
@@ -809,34 +1110,50 @@ def suppliers():
     else:
         order_info = "Nothing"
         order_list.append(order_info)
-    return render_template("suppliers.html", supplier_list=supplier_list, order_list=order_list)
+    return render_template(
+        "suppliers.html", supplier_list=supplier_list, order_list=order_list
+    )
+
 
 @app.route("/received", methods=["POST"])
 def received():
     supply_order_id = request.form.get("supply_order_id")
     quantity = request.form.get("quantity")
-    supply_order_data = query_db("SELECT stock_id FROM supply_order WHERE supply_order_id = ?", (supply_order_id,), one=True)
+    supply_order_data = query_db(
+        "SELECT stock_id FROM supply_order WHERE supply_order_id = ?",
+        (supply_order_id,),
+        one=True,
+    )
     if not supply_order_data:
-            flash("There is no order with that id.")
-            return redirect(request.referrer)
+        flash("There is no order with that id.")
+        return redirect(request.referrer)
     stock_id = supply_order_data["stock_id"]
     db = get_db()
     cursor = db.cursor()
-    cursor.execute("DELETE FROM supply_order WHERE supply_order_id = ?", (supply_order_id,))
     cursor.execute(
-        "INSERT INTO stock_quantity (stock_id, quantity, arrival_date) VALUES (?, ?, ?)",
-        (stock_id, int(quantity), datetime.now().strftime("%Y-%m-%d"))
+        "DELETE FROM supply_order WHERE supply_order_id = ?",
+        (supply_order_id,),
+    )
+    cursor.execute(
+        "INSERT INTO stock_quantity (stock_id, quantity, arrival_date) "
+        "VALUES (?, ?, ?)",
+        (stock_id, int(quantity), datetime.now().strftime("%Y-%m-%d")),
     )
     db.commit()
-    flash (f"Removed order {supply_order_id} from supply orders.")
+    flash(f"Removed order {supply_order_id} from supply orders.")
     time = datetime.now().strftime("%Y-%m-%d")
-    logemail = session["name"] 
-    employee_data = query_db("SELECT name FROM employee WHERE email = ?", (logemail,), one=True)
+    logemail = session["name"]
+    employee_data = query_db(
+        "SELECT name FROM employee WHERE email = ?", (logemail,), one=True
+    )
     name = employee_data[0]
     with open("log.txt", "a") as f:
-        f.write(f"{time}: {name} removed order {supply_order_id} from supply orders\n")
+        f.write(
+            f"{time}: {name} removed order {supply_order_id} from "
+            "supply orders\n"
+        )
     return redirect(request.referrer)
+
 
 if __name__ == "__main__":
     app.run(debug=True)
-

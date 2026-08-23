@@ -1,11 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<<<<<<< HEAD
-=======
-<br> <br>
-<!-- Code for table from geeksforgeeks --->
->>>>>>> 2b9ea1f174f742550f0a868ca9fae028c7ade6cc
 <div id="stock_table">
     <table>
         <thead>
@@ -14,6 +9,8 @@
                 <th>Quantity in stock</th>
                 <th>Order price</th>
                 <th>Time till expiry</th>
+                <th>Log waste</th>
+                <th>Order more</th>
             </tr>
         </thead>
         <tbody>
@@ -22,9 +19,7 @@
                     <td>{{ item.name }}</td>
                     <td>{{ item.qty }}</td>
                     <td>${{ "%.2f"|format(item.price) }}</td>
-                    <td><span class="status_bridge {% if item.expiry_length.category == 'expired' %}alert-accent{% elif item.expiry_length.category in ['warning', 'empty'] %}warning-accent{% else %}safe-accent{% endif %}">
-                        {{ item.expiry_length.text }}
-                    </span></td>
+                    <td>{{ item.expiry_length }}</td>
                     <td class="stock_action_cell">
                         <div class="stock_buttons">
                             <form action="/waste" method="POST" class="inline-form">
