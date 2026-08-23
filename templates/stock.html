@@ -1,7 +1,6 @@
 {% extends "layout.html" %}
 {% block body %}
 
-<br> <br>
 <div id="stock_table">
     <table>
         <thead>
@@ -14,24 +13,24 @@
         </thead>
         <tbody>
             {% for item in stock_list %}
-                <tr>
+                <tr class="data-row">
                     <td>{{ item.name }}</td>
                     <td>{{ item.qty }}</td>
                     <td>${{ "%.2f"|format(item.price) }}</td>
                     <td><span class="status_bridge {% if item.expiry_length.category == 'expired' %}alert-accent{% elif item.expiry_length.category in ['warning', 'empty'] %}warning-accent{% else %}safe-accent{% endif %}">
                         {{ item.expiry_length.text }}
                     </span></td>
-                    <td>
+                    <td class="stock_action_cell">
                         <div class="stock_buttons">
                             <form action="/waste" method="POST" class="inline-form">
                                 <input type="hidden" name="stock_id" value="{{ item.id}}">
                                 <input type="number" name="quantity" value="1" min="1" max="{{ item.qty}}" required>
                                 <button type="submit" class="waste_button">Log damage/waste</button>
                             </form>
+                        </div>
                     </td>
-                    </div>
-                    <div class="stock_buttons">
-                    <td>
+                    <td class="stock_action_cell">
+                        <div class="stock_buttons">
                             <form action="/order_more" method="POST" class="inline-form">
                                 <input type="hidden" name="stock_id" value="{{ item.id}}">
                                 <input type="number" name="quantity" value="1" min="1" required>

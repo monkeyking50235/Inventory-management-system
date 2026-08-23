@@ -1,1 +1,8 @@
 2026-08-19: Admin cleared the logs
+2026-08-21: Admin logged 1x Ground Beef (kg) as waste
+2026-08-23: Admin ordered 1x Pizza Dough Ball
+2026-08-23: Admin removed order 22 from supply orders
+2026-08-23: Admin logged 17x Pizza Dough Ball as waste
+2026-08-23: Admin ordered 15x Bell Peppers & Onions (kg)
+2026-08-23: Admin removed order 23 from supply orders
+2026-08-23: Admin logged 13x Bell Peppers & Onions (kg) as waste

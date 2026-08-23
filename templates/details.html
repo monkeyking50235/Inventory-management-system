@@ -32,7 +32,7 @@
                 </h3>
                 <!-- Rounded switch, code from w3schools -->
                 <label class="switch">
-                    <input type="checkbox" onchange="working()" id = "status">
+                    <input type="checkbox" onchange="working()" id = "status" {% if working == 1 %}checked{% endif %}>
                     <span class="slider round"></span>
                 </label>
             </div>

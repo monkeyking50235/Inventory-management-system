@@ -58,10 +58,11 @@ nav {
     justify-content: space-between;
     gap: 10px;
     z-index: 2000;
-    position: fixed;
+    position: sticky;
     top: 0;
     width: 100%;
     padding: 0 20px;
+    box-sizing: border-box;
 }
 
 .nav-left {
@@ -98,7 +99,6 @@ nav {
 
 body {
     background-color: rgb(165, 196, 212);
-    padding-top: 60px; 
     display: flex;
     flex-direction: column;
     min-height: 100vh;
@@ -989,8 +989,13 @@ table, td, th {
 .stock_buttons{
     display: flex;
     gap: 10px;
+    min-width: 0;
 
     }
+
+.stock_action_cell {
+    min-width: 150px;
+}
 
 .inline-form{
     margin: 0;
@@ -1020,6 +1025,38 @@ thead th {
   padding: 0.75rem 1rem;
   text-align: left;
   background-color: rgb(165, 196, 212);
+}
+
+body.dark-mode thead th {
+    color: rgb(165, 196, 212);
+    background-color: #222;
+}
+
+body.dark-mode #logs_right pre {
+    color: rgb(165, 196, 212);
+}
+
+body.dark-mode #stock_table tbody tr.data-row td::before {
+    color: rgb(165, 196, 212);
+}
+
+body.dark-mode input:not([type="checkbox"]):not([type="hidden"]),
+body.dark-mode textarea,
+body.dark-mode select {
+    color: rgb(165, 196, 212);
+    background-color: #222;
+    border-color: #777;
+}
+
+body.dark-mode input::placeholder,
+body.dark-mode textarea::placeholder {
+    color: #aaa;
+}
+
+body.dark-mode button {
+    color: rgb(165, 196, 212);
+    background-color: #333;
+    border-color: #777;
 }
 
 #supplier_tables {
@@ -1106,6 +1143,10 @@ table {
     overflow: auto;
 }
 
+#buttons_left table {
+    min-width: 760px;
+}
+
 #buttons_left form {
     display: grid;
     gap: 8px;
@@ -1154,6 +1195,34 @@ table {
 }
 
 @media (max-width: 800px) {
+    nav {
+        padding: 0 8px;
+    }
+
+    .nav-left {
+        min-width: 0;
+        gap: 6px;
+    }
+
+    .nav-left ul {
+        min-width: 0;
+        flex-wrap: wrap;
+        gap: 0;
+    }
+
+    nav ul li {
+        padding: 4px 0;
+    }
+
+    nav ul li a {
+        padding: 8px 7px;
+        font-size: 16px;
+    }
+
+    #right {
+        flex-shrink: 0;
+    }
+
     #dashboard {
         flex-direction: column;
         width: calc(100% - 24px);
@@ -1190,6 +1259,20 @@ table {
     #supplier_tables,
     #data_tables {
         flex-direction: column;
+        overflow-x: auto;
+    }
+
+    #supplier_tables table,
+    #data_tables table {
+        min-width: 0;
+    }
+
+    #supplier_tables td,
+    #supplier_tables th,
+    #data_tables td,
+    #data_tables th {
+        overflow-wrap: anywhere;
+        word-break: normal;
     }
 
     #data_summary {
@@ -1204,6 +1287,21 @@ table {
 }
 
 @media (max-width: 800px) {
+    #buttons_left table {
+        width: 100%;
+        min-width: 0;
+        table-layout: fixed;
+    }
+
+    #buttons_left table td,
+    #buttons_left table th {
+        overflow-wrap: anywhere;
+        word-break: normal;
+        vertical-align: top;
+        padding: 6px 4px;
+        font-size: 13px;
+    }
+
     #stock_table thead {
         display: none;
     }
@@ -1211,18 +1309,22 @@ table {
     #stock_table tbody tr.data-row {
         display: grid;
         grid-template-columns: 1fr;
-        background: #ffffff;
+        background: transparent;
         border: 1.5px solid blue;
         margin-bottom: 15px;
         padding: 12px;
         border-radius: 6px;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        box-shadow: none;
     }
 
     #stock_table tbody tr.data-row td::before {
         content:attr(data-label);
         font-weight: bold;
         color: #333;
+    }
+
+    #stock_table tbody tr.data-row td {
+        overflow-wrap: anywhere;
     }
 
     .stock_buttons {
@@ -1364,6 +1466,37 @@ table {
   .slider.round:before {
     border-radius: 50%;
   }
+}
+
+@media (max-width: 800px) {
+    .profile {
+        grid-template-columns: 1fr;
+        gap: 24px;
+        padding: 12px;
+        margin-top: 5%;
+        margin-bottom: 10%;
+    }
+
+    .settings {
+        width: 100%;
+        padding-left: 0;
+        padding-right: 0;
+    }
+
+    .setting-item {
+        width: min(100%, 360px);
+        gap: 16px;
+    }
+
+    .switch {
+        flex: 0 0 60px;
+        margin-top: 0;
+    }
+
+    .setting-item .dropdown,
+    #dropdownMenuButton {
+        max-width: 100%;
+    }
 }
 
 @media (prefers-color-scheme: dark) {

@@ -112,6 +112,7 @@
         let darkMode = false;
         
         function applyDarkMode(isDark) {
+            document.body.classList.toggle("dark-mode", isDark);
     document.body.style.backgroundColor = isDark ? "black" : "rgb(165, 196, 212)";
     document.body.style.color = isDark ? "rgb(165, 196, 212)" : "black";
 

@@ -1,6 +1,5 @@
 {% extends "layout.html" %}
 {% block body %}
-<br><br>
 <div id="dashboard">
   <div id="buttons_left">
     <table>
@@ -53,9 +52,11 @@
           <input type="number" name="cost" min="0" step="0.01" placeholder="5.99" required>
           <label for="description">Short item description</label>
           <input type="text" name="description" placeholder="Short paragraph" required>
-          <label for="meat">Does it contain meat(1 = yes 0 = no)</label>
+          <label for="meat">Does it contain meat</label>
+          <small>(1 = yes 0 = no)</small><br>
           <input type="number" name="meat" min="0" max="1" placeholder="0" required>
-          <label for="spice">Is it spicy(1 = yes 0 = no)</label>
+          <label for="spice">Is it spicy</label>
+          <small>(1 = yes 0 = no)</small><br>
           <input type="number" name="spice" min="0" max="1" placeholder="1" required>
           <label for="image">Provide an image url</label>
           <input type="text" name="image" placeholder="https://www.blahblah/" required>

@@ -368,11 +368,12 @@ def expiry(arrival_date, expiration_time, batch_quantity):
     else: 
         days_left = (expire_date - current_time).days
         life_percentage = (days_left / int(expiration_time)) * 100
+        day_label = "day" if days_left == 1 else "days"
         if life_percentage <= 20: 
-            return {"text": f"Expires in {round(days_left, 1)} days ({batch_quantity} in batch)",
+            return {"text": f"Expires in {days_left} {day_label} ({batch_quantity} in batch)",
             "category": "warning"}
         else:
-            return {"text": f"Expires in {round(days_left, 1)} days ({batch_quantity} in batch)",
+            return {"text": f"Expires in {days_left} {day_label} ({batch_quantity} in batch)",
             "category": "safe"}
 @app.route("/status", methods=['POST'])        
 def status():
@@ -560,7 +561,11 @@ def details():
     logemail = session["name"] 
     sql_user = "SELECT * FROM user;"
     users = query_db(sql_user)
-    return render_template("details.html", logemail=logemail, users=users)
+    employee = query_db(
+        "SELECT working FROM employee WHERE email = ?", (logemail,), one=True
+    )
+    working = employee["working"] if employee else 0
+    return render_template("details.html", logemail=logemail, users=users, working=working)
 
 #Cancel the current order and log out the user
 @app.route("/logout")
