@@ -60,6 +60,7 @@ def inject_cart_data():
 
 
 # Checks if account has owner permissions
+@app.context_processor
 def permissions():
     perms = "no"
     if "name" in session:
@@ -468,6 +469,11 @@ def consume_stock_quantity(stock_id, quantity):
         remaining -= used
         if remaining == 0:
             break
+    db.execute(
+        "DELETE FROM stock_quantity "
+        "WHERE stock_id = ? AND quantity <= 0",
+        (stock_id,),
+    )
 
 
 """ Selects the info from the order table for the current user, ensuring its
@@ -1038,8 +1044,12 @@ def data():
         FROM stock
         JOIN stock_quantity ON stock.stock_id = stock_quantity.stock_id
         WHERE stock_quantity.quantity > 0
-        AND date(stock_quantity.arrival_date, '+' || stock.expiration_time ||
-             ' days') = date('now')
+        AND julianday(stock_quantity.arrival_date, '+' ||
+                      stock.expiration_time || ' days') -
+            julianday('now', 'localtime') >= 0
+        AND julianday(stock_quantity.arrival_date, '+' ||
+                      stock.expiration_time || ' days') -
+            julianday('now', 'localtime') < 1
         GROUP BY stock.stock_id, stock.name
         ORDER BY stock.name""")
 
