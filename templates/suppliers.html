@@ -8,6 +8,7 @@
                     <th>Name</th>
                     <th>Email</th>
                     <th>Phone number</th>
+                    <th>Items supplied</th>
                 </tr>
             </thead>
             <tbody>
@@ -16,6 +17,7 @@
                         <td>{{ item.name }}</td>
                         <td>{{ item.email }}</td>
                         <td>{{ item.phone }}</td>
+                        <td>{{ item.stock_names }}</td>
                     </tr>
                 {% endfor %}
             </tbody>

@@ -36,6 +36,8 @@
         <input type="text" name="email" placeholder="example@email.com" required>
         <label for="job">Job title</label>
         <input type="text" name="job" placeholder="accountant" required>
+        <label for="store-id">Store ID</label>
+        <input type="number" name="store_id" min="0" placeholder="1" required>
         <button type="submit">Add account as employee</button>
       </form>
       <form action="{{ url_for('remove_employee') }}" method="post">
@@ -49,7 +51,14 @@
           <label for="name">Item name</label>
           <input type="text" name="name" placeholder="Onions" required>
           <label for="cost">Item Cost</label>
-          <input type="number" name="cost" min="0" step="0.01" placeholder="5.99" required>
+          <input
+            type="text"
+            name="cost"
+            inputmode="decimal"
+            pattern="(?:\d+(?:\.\d{1,2})?|\.\d{1,2})"
+            placeholder="5.99"
+            required
+            onblur="if (/^(?:\d+(?:\.\d{1,2})?|\.\d{1,2})$/.test(this.value)) this.value = Number(this.value).toFixed(2)">
           <label for="description">Short item description</label>
           <input type="text" name="description" placeholder="Short paragraph" required>
           <label for="meat">Does it contain meat</label>
@@ -77,15 +86,15 @@
           <label for="address">Supplier address</label>
           <input type="text" name="address" placeholder="123 road street" required>
           <label for="email">Supplier email</label>
-          <input type="text" name="email" placeholder="example@gmail.com" required>
+          <input type="email" name="email" placeholder="example@gmail.com" pattern="[^@]*@[^@]*" required>
           <label for="phone">Supplier phone number</label>
-          <input type="text" name="phone_number" placeholder="111 111 1111" required>
+          <input type="tel" name="phone_number" placeholder="111 111 1111" pattern="[0-9+().\s-]+" title="Use numbers and common phone punctuation only" required>
           <label for="stock">Items they stock</label>
           <small>Separate multiple items with commas or new lines.</small><br>
           <textarea name="stock" placeholder="Pizza Dough Ball, Cauliflower Crust, Deep Dish Dough" required rows="5"></textarea>
         <div>
           <label for="delivery_time">Average delivery time (days)</label>
-          <input type="number" name="delivery_time" placeholder="3">
+          <input type="number" name="delivery_time" min="0" step="1" placeholder="3" required>
         <button type="submit">Add supplier</button>
         </div>
       </form>
